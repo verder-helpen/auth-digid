@@ -8,7 +8,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -83,11 +82,13 @@ func (s *SamlSessionEncoder) New(assertion *saml.Assertion) (samlsp.Session, err
 
 	encodedAttributes, err := json.Marshal(attributes)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
-	_, err = s.db.Exec("INSERT INTO saml_session (sessionid, attributes) VALUES ($0, $1)", id, string(encodedAttributes))
+	_, err = s.db.Exec("INSERT INTO saml_session (sessionid, attributes) VALUES ($1, $2)", id, string(encodedAttributes))
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -102,8 +103,9 @@ func (s *SamlSessionEncoder) Encode(session samlsp.Session) (string, error) {
 }
 
 func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
-	rows, err := s.db.Query("SELECT attributes FROM saml_session WHERE session_id = $0", id)
+	rows, err := s.db.Query("SELECT attributes FROM saml_session WHERE sessionid = $1", id)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -114,12 +116,14 @@ func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 	var encodedAttributes string
 	err = rows.Scan(&encodedAttributes)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
 	var attributes samlsp.Attributes
 	err = json.Unmarshal([]byte(encodedAttributes), &attributes)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -146,7 +150,7 @@ type IDContactSession struct {
 
 func (m *IDContactSessionManager) NewSession(attributes, continuation string, attributeURL *string) (*IDContactSession, error) {
 	id := GenerateID()
-	_, err := m.db.Exec("INSERT INTO idcontact_session (sessionid, attributes, continuation, attr_url) VALUES ($0, $1, $2, $3)", id, attributes, continuation, attributeURL)
+	_, err := m.db.Exec("INSERT INTO idcontact_session (sessionid, attributes, continuation, attr_url) VALUES ($1, $2, $3, $4)", id, attributes, continuation, attributeURL)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +163,7 @@ func (m *IDContactSessionManager) NewSession(attributes, continuation string, at
 }
 
 func (m *IDContactSessionManager) GetSession(id string) (*IDContactSession, error) {
-	rows, err := m.db.Query("SELECT attributes, continuation, attr_url FROM idcontact_session WHERE sessionid = $0", id)
+	rows, err := m.db.Query("SELECT attributes, continuation, attr_url FROM idcontact_session WHERE sessionid = $1", id)
 	if err != nil {
 		return nil, err
 	}
@@ -275,6 +279,7 @@ type StartResponse struct {
 }
 
 func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Starting session")
 	// Extract request
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -289,6 +294,7 @@ func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println("Request:", request)
 	for _, attribute := range request.Attributes {
 		_, ok := c.AttributeMapping[attribute]
 		if !ok {
@@ -305,6 +311,11 @@ func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session, err := c.SessionManager.NewSession(string(encodedAttributes), request.Continuation, request.AttributeURL)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Println(err)
+		return
+	}
 	clientURL := *c.ServerURL
 	clientURL.Path = path.Join(clientURL.Path, "session", session.id)
 	response, err := json.Marshal(StartResponse{ClientURL: clientURL.String()})
@@ -345,7 +356,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	token.Set(jwt.IssuedAtKey, time.Now())
 	token.Set(jwt.ExpirationKey, time.Now().Add(time.Minute*15))
 	token.Set("status", "succes")
-	token.Set("attibutes", attributeResult)
+	token.Set("attributes", attributeResult)
 	signed, err := jwt.Sign(token, jwa.RS256, c.JwtSigningKey)
 	if err != nil {
 		w.WriteHeader(500)
@@ -360,9 +371,9 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	outerEncoded := make([]byte, base64.URLEncoding.EncodedLen(len(outerJSON)))
-	base64.URLEncoding.Encode(outerEncoded, outerJSON)
-	authToken, err := jwe.Encrypt(outerEncoded, jwa.RSA1_5, c.JwtEncryptionKey, jwa.A128CBC_HS256, jwa.NoCompress)
+	//outerEncoded := make([]byte, base64.URLEncoding.EncodedLen(len(outerJSON)))
+	//base64.URLEncoding.Encode(outerEncoded, outerJSON)
+	authToken, err := jwe.Encrypt(outerJSON, jwa.RSA_OAEP, c.JwtEncryptionKey, jwa.A128CBC_HS256, jwa.NoCompress)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Println(err)
