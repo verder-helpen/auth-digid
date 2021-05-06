@@ -1,0 +1,11 @@
+{
+  "SamlCertificate": "myservice.cert",
+  "SamlKey": "myservice.key",
+  "IDPMetadataURL": "https://samltest.id/saml/idp",
+  "ServerURL": "http://localhost:8000",
+  "JWTSigningKey": "signkey.pem",
+  "JWTEncryptionKey": "encryptionkey.pem",
+  "AttributeMapping": {
+    "email": "email"
+  }
+}
