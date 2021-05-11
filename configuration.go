@@ -1,0 +1,107 @@
+package main
+
+import (
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"database/sql"
+	"fmt"
+	"io/ioutil"
+	"net/url"
+
+	jwtkeys "github.com/dgrijalva/jwt-go/v4"
+	"github.com/spf13/viper"
+)
+
+type Configuration struct {
+	SamlKeyPair    tls.Certificate
+	IdpMetadataURL *url.URL
+
+	JwtSigningKey    *rsa.PrivateKey
+	JwtEncryptionKey *rsa.PublicKey
+
+	ServerURL          *url.URL
+	SessionManager     *IDContactSessionManager
+	DatabaseConnection string
+	AttributeMapping   map[string]string
+}
+
+func ParseConfiguration() Configuration {
+	// Setup configuration sources
+	viper.SetConfigFile("config.json")
+	viper.SetConfigType("json")
+	viper.AddConfigPath(".")
+	viper.SetEnvPrefix("DIGID")
+	viper.AutomaticEnv()
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+	}
+
+	// Load saml configuration
+	samlCertificate := viper.GetString("SamlCertificate")
+	samlKey := viper.GetString("SamlKey")
+	keypair, err := tls.LoadX509KeyPair(samlCertificate, samlKey)
+	if err != nil {
+		fmt.Println("Failed to read saml keypair")
+		panic(err)
+	}
+	keypair.Leaf, err = x509.ParseCertificate(keypair.Certificate[0])
+	if err != nil {
+		fmt.Println("Failed to parse leaf certificate")
+		panic(err)
+	}
+
+	rawIdpURL := viper.GetString("IDPMetadataURL")
+	idpMetadataURL, err := url.Parse(rawIdpURL)
+	if err != nil {
+		fmt.Println("Invalid identity provider metadata url")
+		panic(err)
+	}
+
+	// Load encryption keys
+	jwtSigningKeyFile := viper.GetString("JWTSigningKey")
+	jwtSigningKeyPEM, err := ioutil.ReadFile(jwtSigningKeyFile)
+	if err != nil {
+		fmt.Println("Failed to read jwt siging key")
+		panic(err)
+	}
+	jwtSigningKey, err := jwtkeys.ParseRSAPrivateKeyFromPEM(jwtSigningKeyPEM)
+	if err != nil {
+		fmt.Println("Failed to parse jwt signing key")
+		panic(err)
+	}
+
+	jwtEncryptionKeyFile := viper.GetString("JWTEncryptionKey")
+	jwtEncryptionKeyPEM, err := ioutil.ReadFile(jwtEncryptionKeyFile)
+	if err != nil {
+		fmt.Println("Failed to read jwt encryption key")
+		panic(err)
+	}
+	jwtEncryptionKey, err := jwtkeys.ParseRSAPublicKeyFromPEM(jwtEncryptionKeyPEM)
+
+	// General server data
+	rawServerURL := viper.GetString("ServerURL")
+	serverURL, err := url.Parse(rawServerURL)
+	databaseConnection := viper.GetString("DatabaseConnection")
+	db, err := sql.Open("pgx", databaseConnection)
+	if err != nil {
+		fmt.Println("Couldn't open database")
+		panic(err)
+	}
+
+	return Configuration{
+		SamlKeyPair:    keypair,
+		IdpMetadataURL: idpMetadataURL,
+
+		JwtSigningKey:    jwtSigningKey,
+		JwtEncryptionKey: jwtEncryptionKey,
+
+		ServerURL:          serverURL,
+		DatabaseConnection: databaseConnection,
+		SessionManager: &IDContactSessionManager{
+			db: db,
+		},
+		AttributeMapping: viper.GetStringMapString("AttributeMapping"),
+	}
+}
