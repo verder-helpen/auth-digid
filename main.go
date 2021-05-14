@@ -28,6 +28,7 @@ type StartResponse struct {
 	ClientURL string `json:"client_url"`
 }
 
+// Start ID Contact authentication session
 func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Starting session")
 	// Extract request
@@ -44,7 +45,8 @@ func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println("Request:", request)
+
+	// Validate requested attributes
 	for _, attribute := range request.Attributes {
 		_, ok := c.AttributeMapping[attribute]
 		if !ok {
@@ -53,19 +55,22 @@ func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	// Create a new session in the database
 	encodedAttributes, err := json.Marshal(request.Attributes)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Println(err)
 		return
 	}
-
 	session, err := c.SessionManager.NewSession(string(encodedAttributes), request.Continuation, request.AttributeURL)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Println(err)
 		return
 	}
+
+	// And instruct the core appropriately
 	clientURL := *c.ServerURL
 	clientURL.Path = path.Join(clientURL.Path, "session", session.id)
 	response, err := json.Marshal(StartResponse{ClientURL: clientURL.String()})
@@ -78,7 +83,9 @@ type AuthResult struct {
 	attributes map[string]string
 }
 
+// Handle an actual end-user login
 func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
+	// Fetch corresponding ID Contact session
 	id := chi.URLParam(r, "sessionid")
 	session, err := c.SessionManager.GetSession(id)
 	if err != nil {
@@ -95,18 +102,22 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract attributes from SAML Assertions:
 	attributeResult := make(map[string]string)
 
 	for _, attribute := range attributes {
 		attributeResult[attribute] = samlsp.AttributeFromContext(r.Context(), c.AttributeMapping[attribute])
 	}
 
+	// Construct authentication result JWT
 	authToken, err := buildAttributeJWT(attributeResult, c.JwtSigningKey, c.JwtEncryptionKey)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Println(err)
 		return
 	}
+
+	// And deliver it appropriately
 	if session.attributeURL != nil {
 		response, err := http.Post(*session.attributeURL, "application/jwt", bytes.NewReader(authToken))
 		if err != nil {
@@ -132,8 +143,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Configuration) BuildHandler() http.Handler {
-	r := chi.NewRouter()
-
+	// Setup SAML plugin
 	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
 		*c.IdpMetadataURL)
 	if err != nil {
@@ -163,6 +173,9 @@ func (c *Configuration) BuildHandler() http.Handler {
 			db: db,
 		},
 	}
+
+	// Construct router
+	r := chi.NewRouter()
 
 	r.Group(func(r chi.Router) {
 		r.Use(samlSP.RequireAccount)

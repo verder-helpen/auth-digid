@@ -14,12 +14,15 @@ import (
 )
 
 type Configuration struct {
+	// SAML service configuration
 	SamlKeyPair    tls.Certificate
 	IdpMetadataURL *url.URL
 
+	// Keys used to create attribute JWTs
 	JwtSigningKey    *rsa.PrivateKey
 	JwtEncryptionKey *rsa.PublicKey
 
+	// General server configuration
 	ServerURL          *url.URL
 	SessionManager     *IDContactSessionManager
 	DatabaseConnection string
