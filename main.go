@@ -148,6 +148,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 	}
 
 	samlSP, err := samlsp.New(samlsp.Options{
+		EntityID:    c.EntityID,
 		URL:         *c.ServerURL,
 		Key:         c.SamlKeyPair.PrivateKey.(*rsa.PrivateKey),
 		Certificate: c.SamlKeyPair.Leaf,

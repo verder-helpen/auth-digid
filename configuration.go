@@ -16,6 +16,7 @@ import (
 type Configuration struct {
 	SamlKeyPair    tls.Certificate
 	IdpMetadataURL *url.URL
+	EntityID       string // Not mandatory
 
 	JwtSigningKey    *rsa.PrivateKey
 	JwtEncryptionKey *rsa.PublicKey
@@ -59,6 +60,8 @@ func ParseConfiguration() Configuration {
 		panic(err)
 	}
 
+	entityID := viper.GetString("EntityID")
+
 	// Load encryption keys
 	jwtSigningKeyFile := viper.GetString("JWTSigningKey")
 	jwtSigningKeyPEM, err := ioutil.ReadFile(jwtSigningKeyFile)
@@ -93,6 +96,7 @@ func ParseConfiguration() Configuration {
 	return Configuration{
 		SamlKeyPair:    keypair,
 		IdpMetadataURL: idpMetadataURL,
+		EntityID:       entityID,
 
 		JwtSigningKey:    jwtSigningKey,
 		JwtEncryptionKey: jwtEncryptionKey,
