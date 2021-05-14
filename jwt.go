@@ -10,6 +10,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
+// Construct an attribute JWT signed and encrypted with given keys
 func buildAttributeJWT(attributes map[string]string, signKey *rsa.PrivateKey, encryptionKey *rsa.PublicKey) ([]byte, error) {
 	token := jwt.New()
 	token.Set(jwt.SubjectKey, "id-contact-attributes")
