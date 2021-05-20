@@ -23,6 +23,12 @@ type Configuration struct {
 	JwtSigningKey    *rsa.PrivateKey
 	JwtEncryptionKey *rsa.PublicKey
 
+	// BRP configuration
+	BRPServer    string
+	Client       tls.Certificate
+	CaCerts      []byte
+	BSNAssertion string
+
 	// General server configuration
 	ServerURL          *url.URL
 	SessionManager     *IDContactSessionManager
@@ -65,6 +71,21 @@ func ParseConfiguration() Configuration {
 
 	entityID := viper.GetString("EntityID")
 
+	// Load BRP configuration
+	caCertFile := viper.GetString("CACerts")
+	caCerts, err := ioutil.ReadFile(caCertFile)
+	if err != nil {
+		fmt.Println("Failed to read ca certs")
+		panic(err)
+	}
+	clientCertKey := viper.GetString("BRPKey")
+	clientCertFile := viper.GetString("BRPCert")
+	clientCert, err := tls.LoadX509KeyPair(clientCertFile, clientCertKey)
+	if err != nil {
+		fmt.Println("Failed to load brp key")
+		panic(err)
+	}
+
 	// Load encryption keys
 	jwtSigningKeyFile := viper.GetString("JWTSigningKey")
 	jwtSigningKeyPEM, err := ioutil.ReadFile(jwtSigningKeyFile)
@@ -103,6 +124,11 @@ func ParseConfiguration() Configuration {
 
 		JwtSigningKey:    jwtSigningKey,
 		JwtEncryptionKey: jwtEncryptionKey,
+
+		CaCerts:      caCerts,
+		BRPServer:    viper.GetString("BRPServer"),
+		Client:       clientCert,
+		BSNAssertion: viper.GetString("BSNAssertion"),
 
 		ServerURL:          serverURL,
 		DatabaseConnection: databaseConnection,

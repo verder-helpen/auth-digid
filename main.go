@@ -103,11 +103,13 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract attributes from SAML Assertions:
-	attributeResult := make(map[string]string)
-
-	for _, attribute := range attributes {
-		attributeResult[attribute] = samlsp.AttributeFromContext(r.Context(), c.AttributeMapping[attribute])
+	// Extract attributes from BRP:
+	bsn := samlsp.AttributeFromContext(r.Context(), c.BSNAssertion)
+	attributeResult, err := GetBRPAttributes(c.BRPServer, bsn, c.AttributeMapping, c.Client, c.CaCerts)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Println(err)
+		return
 	}
 
 	// Construct authentication result JWT
