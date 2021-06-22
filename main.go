@@ -163,6 +163,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 		Key:                 c.SamlKeyPair.PrivateKey.(*rsa.PrivateKey),
 		Certificate:         c.SamlKeyPair.Leaf,
 		IDPMetadata:         idpMetadata,
+		SignRequest:         true,
 		UseArtifactResponse: true,
 	})
 	samlSP.Session = &samlsp.CookieSessionProvider{
