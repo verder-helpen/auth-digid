@@ -10,3 +10,5 @@ require (
 	github.com/lestrrat-go/jwx v1.2.0
 	github.com/spf13/viper v1.7.1
 )
+
+replace github.com/crewjam/saml => github.com/id-contact/saml v0.4.6-0.20210618122539-01c778c60652
