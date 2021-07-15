@@ -11,4 +11,4 @@ require (
 	github.com/spf13/viper v1.7.1
 )
 
-replace github.com/crewjam/saml => github.com/id-contact/saml v0.4.6-0.20210624080443-62740c0a3eba
+replace github.com/crewjam/saml => github.com/id-contact/saml v0.4.6-0.20210715085542-1ef6a54949db
