@@ -24,10 +24,9 @@ type Configuration struct {
 	JwtEncryptionKey *rsa.PublicKey
 
 	// BRP configuration
-	BRPServer    string
-	Client       tls.Certificate
-	CaCerts      []byte
-	BSNAssertion string
+	BRPServer string
+	Client    tls.Certificate
+	CaCerts   []byte
 
 	// General server configuration
 	ServerURL          *url.URL
@@ -125,10 +124,9 @@ func ParseConfiguration() Configuration {
 		JwtSigningKey:    jwtSigningKey,
 		JwtEncryptionKey: jwtEncryptionKey,
 
-		CaCerts:      caCerts,
-		BRPServer:    viper.GetString("BRPServer"),
-		Client:       clientCert,
-		BSNAssertion: viper.GetString("BSNAssertion"),
+		CaCerts:   caCerts,
+		BRPServer: viper.GetString("BRPServer"),
+		Client:    clientCert,
 
 		ServerURL:          serverURL,
 		DatabaseConnection: databaseConnection,
