@@ -105,10 +105,14 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 
 	// Extract attributes from BRP:
 	bsn := samlsp.AttributeFromContext(r.Context(), "NameID")
-	if bsn[:9] != "S00000000" {
+	if bsn[:9] != "s00000000" {
 		w.WriteHeader(500)
 		fmt.Println("Unexpected sectoral code", bsn[:9])
 		return
+	}
+	altbsn, ok := c.TestBSNMapping[bsn[10:]]
+	if ok {
+		bsn = "s00000000:" + altbsn
 	}
 	attributeResult, err := GetBRPAttributes(c.BRPServer, bsn[10:], c.AttributeMapping, c.Client, c.CaCerts)
 	if err != nil {

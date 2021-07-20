@@ -28,6 +28,8 @@ type Configuration struct {
 	Client    tls.Certificate
 	CaCerts   []byte
 
+	TestBSNMapping map[string]string
+
 	// General server configuration
 	ServerURL          *url.URL
 	SessionManager     *IDContactSessionManager
@@ -134,5 +136,6 @@ func ParseConfiguration() Configuration {
 			db: db,
 		},
 		AttributeMapping: viper.GetStringMapString("AttributeMapping"),
+		TestBSNMapping:   viper.GetStringMapString("BSNMap"),
 	}
 }
