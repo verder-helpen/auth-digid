@@ -49,6 +49,18 @@ func (s *SamlSessionEncoder) New(assertion *saml.Assertion) (samlsp.Session, err
 		}
 	}
 
+	if assertion.Subject != nil {
+		if assertion.Subject.NameID != nil {
+			attributes["NameID"] = append(attributes["NameID"], assertion.Subject.NameID.Value)
+		}
+	}
+
+	for _, authnStatement := range assertion.AuthnStatements {
+		if authnStatement.AuthnContext.AuthnContextClassRef != nil {
+			attributes["AuthnContextClassRef"] = append(attributes["AuthnContextClassRef"], authnStatement.AuthnContext.AuthnContextClassRef.Value)
+		}
+	}
+
 	encodedAttributes, err := json.Marshal(attributes)
 	if err != nil {
 		fmt.Println(err)

@@ -13,6 +13,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -158,12 +159,18 @@ func (c *Configuration) BuildHandler() http.Handler {
 	}
 
 	samlSP, err := samlsp.New(samlsp.Options{
-		EntityID:            c.EntityID,
-		URL:                 *c.ServerURL,
-		Key:                 c.SamlKeyPair.PrivateKey.(*rsa.PrivateKey),
-		Certificate:         c.SamlKeyPair.Leaf,
-		IDPMetadata:         idpMetadata,
-		UseArtifactResponse: true,
+		EntityID:             c.EntityID,
+		URL:                  *c.ServerURL,
+		Key:                  c.SamlKeyPair.PrivateKey.(*rsa.PrivateKey),
+		Certificate:          c.SamlKeyPair.Leaf,
+		TLSClientCertificate: &c.SamlKeyPair,
+		IDPMetadata:          idpMetadata,
+		SignRequest:          true,
+		UseArtifactResponse:  true,
+		RequestedAuthnContext: &saml.RequestedAuthnContext{
+			Comparison:           "minimum",
+			AuthnContextClassRef: "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport",
+		},
 	})
 	samlSP.Session = &samlsp.CookieSessionProvider{
 		Name:     "samlsession",
