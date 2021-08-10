@@ -32,6 +32,7 @@ type Configuration struct {
 
 	// General server configuration
 	ServerURL          *url.URL
+	SamlSessionManager *SamlSessionEncoder
 	SessionManager     *IDContactSessionManager
 	DatabaseConnection string
 	SentryDSN          string
@@ -133,6 +134,9 @@ func ParseConfiguration() Configuration {
 
 		ServerURL:          serverURL,
 		DatabaseConnection: databaseConnection,
+		SamlSessionManager: &SamlSessionEncoder{
+			db: db,
+		},
 		SessionManager: &IDContactSessionManager{
 			db: db,
 		},

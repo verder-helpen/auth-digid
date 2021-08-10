@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/rsa"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -106,7 +105,8 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extract attributes from BRP:
-	bsn := samlsp.AttributeFromContext(r.Context(), "NameID")
+	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
+	bsn := samlsession.attributes.Get("NameID")
 	if bsn[:9] != "s00000000" {
 		w.WriteHeader(500)
 		fmt.Println("Unexpected sectoral code", bsn[:9])
@@ -124,7 +124,9 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Construct authentication result JWT
-	authToken, err := buildAttributeJWT(attributeResult, c.JwtSigningKey, c.JwtEncryptionKey)
+	logoutUrl := *c.ServerURL
+	logoutUrl.Path = path.Join(logoutUrl.Path, "update", samlsession.logoutid)
+	authToken, err := buildAttributeJWT(attributeResult, logoutUrl.String(), c.JwtSigningKey, c.JwtEncryptionKey)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Println(err)
@@ -156,18 +158,36 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Handle update on session from communication plugin.
+func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(400)
+		return
+	}
+
+	updateType := r.FormValue("type")
+	if updateType == "logout" {
+		// Handle logout request
+		err = c.SamlSessionManager.Logout(chi.URLParam(r, "logoutid"))
+		if err != nil {
+			fmt.Println("Logout failed: ", err)
+			// Note, this error shouldn't be propagated to remote
+		}
+	} else {
+		fmt.Println("Unrecognized update type ", updateType)
+	}
+
+	w.WriteHeader(204)
+}
+
 func (c *Configuration) BuildHandler() http.Handler {
 	// Setup SAML plugin
 	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
 		*c.IdpMetadataURL)
 	if err != nil {
 		fmt.Println("Failed to download IdP metadata.")
-		panic(err)
-	}
-
-	db, err := sql.Open("pgx", c.DatabaseConnection)
-	if err != nil {
-		fmt.Println("Couldn't open database")
 		panic(err)
 	}
 
@@ -191,9 +211,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 		HTTPOnly: true,
 		Secure:   c.ServerURL.Scheme == "https",
 		MaxAge:   60 * time.Minute,
-		Codec: &SamlSessionEncoder{
-			db: db,
-		},
+		Codec:    c.SamlSessionManager,
 	}
 
 	// Construct router
@@ -209,6 +227,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 	})
 
 	r.Post("/start_authentication", c.startSession)
+	r.Post("/update/{logoutid}", c.SessionUpdate)
 	r.Mount("/saml/", samlSP)
 
 	return r
