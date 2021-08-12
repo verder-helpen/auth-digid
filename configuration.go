@@ -34,6 +34,7 @@ type Configuration struct {
 	ServerURL          *url.URL
 	SessionManager     *IDContactSessionManager
 	DatabaseConnection string
+	SentryDSN          string
 	AttributeMapping   map[string]string
 }
 

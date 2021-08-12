@@ -15,6 +15,8 @@ import (
 
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
+	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
@@ -196,6 +198,10 @@ func (c *Configuration) BuildHandler() http.Handler {
 
 	// Construct router
 	r := chi.NewRouter()
+	if c.SentryDSN != "" {
+		sentryMiddleware := sentryhttp.New(sentryhttp.Options{})
+		r.Use(sentryMiddleware.Handle)
+	}
 
 	r.Group(func(r chi.Router) {
 		r.Use(samlSP.RequireAccount)
@@ -208,8 +214,22 @@ func (c *Configuration) BuildHandler() http.Handler {
 	return r
 }
 
+var release string
+
 func main() {
 	configuration := ParseConfiguration()
+	if configuration.SentryDSN != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:         configuration.SentryDSN,
+			Release:     release,
+			Environment: configuration.ServerURL.String(),
+		})
+		if err != nil {
+			fmt.Println("Error starting sentry")
+			panic(err)
+		}
+		defer sentry.Recover()
+	}
 	http.Handle("/", configuration.BuildHandler())
 	http.ListenAndServe(":8000", nil)
 }
