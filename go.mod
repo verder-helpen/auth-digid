@@ -9,6 +9,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.3
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/lestrrat-go/jwx v1.2.0
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
 )

@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
@@ -44,7 +45,7 @@ func GenerateID() string {
 	bytes := make([]byte, ID_LENGTH)
 	_, err := rand.Read(bytes)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	result := make([]rune, ID_LENGTH)
 	for i := 0; i < ID_LENGTH; i++ {
@@ -90,13 +91,13 @@ func (s *SamlSessionEncoder) New(assertion *saml.Assertion) (samlsp.Session, err
 
 	encodedAttributes, err := json.Marshal(attributes)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
 	_, err = s.db.Exec("INSERT INTO saml_session (sessionid, logoutid, attributes) VALUES ($1, $2, $3)", id, logoutid, string(encodedAttributes))
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -114,7 +115,7 @@ func (s *SamlSessionEncoder) Encode(session samlsp.Session) (string, error) {
 func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 	rows, err := s.db.Query("SELECT attributes, logoutid FROM saml_session WHERE sessionid = $1", id)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -126,14 +127,14 @@ func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 	var logoutid string
 	err = rows.Scan(&encodedAttributes, &logoutid)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
 	var attributes samlsp.Attributes
 	err = json.Unmarshal([]byte(encodedAttributes), &attributes)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return nil, err
 	}
 
