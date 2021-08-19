@@ -138,6 +138,7 @@ func (m *IDContactSessionManager) NewSession(attributes, continuation string, at
 
 	return &IDContactSession{
 		id:           id,
+		attributes:   attributes,
 		continuation: continuation,
 		attributeURL: attributeURL,
 	}, nil
