@@ -11,6 +11,21 @@ import (
 	"github.com/crewjam/saml/samlsp"
 )
 
+var authnContextClasses = map[string]int{
+	"urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport": 1, // Basis
+	"urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract":    2, // Midden
+	"urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard":                  3, // Substantieel
+	"urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI":               4, // Hoog
+}
+
+func IsDigiDAuthnContextClass(acc string) bool {
+	return authnContextClasses[acc] != 0
+}
+
+func CompareAuthnContextClass(minimum string, acc string) bool {
+	return authnContextClasses[minimum] <= authnContextClasses[acc]
+}
+
 var chars = []rune("0123456789abcdefghkmnpqrstuvwxyz")
 
 const ID_LENGTH = 20

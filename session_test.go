@@ -29,6 +29,41 @@ func setupDB(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestIsDigiDAuthnContextClass(t *testing.T) {
+	assert.True(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
+	assert.True(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
+	assert.True(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
+	assert.True(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
+	assert.False(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+}
+
+func TestCompareAuthnContextClass(t *testing.T) {
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
+
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
+
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
+
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
+	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
+	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
+
+}
+
 func TestGenerateID(t *testing.T) {
 	a := GenerateID()
 	b := GenerateID()

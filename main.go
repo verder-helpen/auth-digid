@@ -104,6 +104,13 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authnContextClass := samlsp.AttributeFromContext(r.Context(), "AuthnContextClassRef")
+	if !CompareAuthnContextClass(c.AuthnContextClassRef, authnContextClass) {
+		w.WriteHeader(500)
+		fmt.Println("AuthnContextClass too low", authnContextClass)
+		return
+	}
+
 	// Extract attributes from BRP:
 	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
 	bsn := samlsession.attributes.Get("NameID")
@@ -202,7 +209,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 		UseArtifactResponse:  true,
 		RequestedAuthnContext: &saml.RequestedAuthnContext{
 			Comparison:           "minimum",
-			AuthnContextClassRef: "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport",
+			AuthnContextClassRef: c.AuthnContextClassRef,
 		},
 	})
 	samlSP.Session = &samlsp.CookieSessionProvider{
