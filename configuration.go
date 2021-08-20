@@ -154,6 +154,7 @@ func ParseConfiguration() Configuration {
 		SessionManager: &IDContactSessionManager{
 			db: db,
 		},
+		SentryDSN:        viper.GetString("SentryDSN"),
 		AttributeMapping: viper.GetStringMapString("AttributeMapping"),
 		TestBSNMapping:   viper.GetStringMapString("BSNMap"),
 	}
