@@ -7,6 +7,7 @@ require (
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/go-chi/chi/v5 v5.0.3
+	github.com/go-co-op/gocron v1.7.0
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/lestrrat-go/jwx v1.2.0
 	github.com/sirupsen/logrus v1.4.2

@@ -18,6 +18,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-co-op/gocron"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
@@ -183,6 +184,12 @@ func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
 			log.Error("Logout failed: ", err)
 			// Note, this error shouldn't be propagated to remote
 		}
+	} else if updateType == "user_active" {
+		err = c.SamlSessionManager.MarkActive(chi.URLParam(r, "logoutid"))
+		if err != nil {
+			log.Error("Activity marking failed: ", err)
+			// Note, this error shouldn't be propagated to remote
+		}
 	} else {
 		log.Warn("Unrecognized update type ", updateType)
 	}
@@ -283,6 +290,14 @@ func main() {
 		// And hook into logging
 		log.AddHook(&SentryLogHook{})
 	}
+
+	s := gocron.NewScheduler(time.UTC)
+	s.Every("1m").Do(func() {
+		configuration.SamlSessionManager.Cleanup()
+		configuration.SessionManager.Cleanup()
+	})
+	s.StartAsync()
+
 	http.Handle("/", configuration.BuildHandler())
 	http.ListenAndServe(":8000", nil)
 }

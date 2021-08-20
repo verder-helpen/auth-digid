@@ -148,10 +148,12 @@ func ParseConfiguration() Configuration {
 		ServerURL:          serverURL,
 		DatabaseConnection: databaseConnection,
 		SamlSessionManager: &SamlSessionEncoder{
-			db: db,
+			db:      db,
+			timeout: viper.GetInt("SamlSessionTimeout"),
 		},
 		SessionManager: &IDContactSessionManager{
-			db: db,
+			db:      db,
+			timeout: viper.GetInt("IDContactTimeout"),
 		},
 		SentryDSN:        viper.GetString("SentryDSN"),
 		AttributeMapping: viper.GetStringMapString("AttributeMapping"),

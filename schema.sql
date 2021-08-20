@@ -6,6 +6,7 @@ CREATE TABLE "saml_session" (
   "sessionid" text NOT NULL,
   "logoutid" text NOT NULL,
   "attributes" text NOT NULL,
+  "expiry" timestamp,
   PRIMARY KEY("id")
 );
 
@@ -18,6 +19,7 @@ CREATE TABLE "idcontact_session" (
   "attributes" text NOT NULL,
   "continuation" text NOT NULL,
   "attr_url" text,
+  "expiry" timestamp,
   PRIMARY KEY("id")
 );
 

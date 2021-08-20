@@ -55,7 +55,8 @@ func GenerateID() string {
 }
 
 type SamlSessionEncoder struct {
-	db *sql.DB
+	db      *sql.DB
+	timeout int // timeout time in minutes
 }
 
 type SamlSession struct {
@@ -95,7 +96,7 @@ func (s *SamlSessionEncoder) New(assertion *saml.Assertion) (samlsp.Session, err
 		return nil, err
 	}
 
-	_, err = s.db.Exec("INSERT INTO saml_session (sessionid, logoutid, attributes) VALUES ($1, $2, $3)", id, logoutid, string(encodedAttributes))
+	_, err = s.db.Exec("INSERT INTO saml_session (sessionid, logoutid, attributes, expiry) VALUES ($1, $2, $3, NOW() + ($4 * Interval '1 minute'))", id, logoutid, string(encodedAttributes), s.timeout)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -113,7 +114,7 @@ func (s *SamlSessionEncoder) Encode(session samlsp.Session) (string, error) {
 }
 
 func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
-	rows, err := s.db.Query("SELECT attributes, logoutid FROM saml_session WHERE sessionid = $1", id)
+	rows, err := s.db.Query("SELECT attributes, logoutid FROM saml_session WHERE sessionid = $1 AND expiry > NOW()", id)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -145,6 +146,23 @@ func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 	}, nil
 }
 
+func (s *SamlSessionEncoder) MarkActive(logoutid string) error {
+	result, err := s.db.Exec("UPDATE saml_session SET expiry = NOW() + ($2 * Interval '1 minute') WHERE logoutid = $1 and expiry > NOW()", logoutid, s.timeout)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	aff, err := result.RowsAffected()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	if aff != 1 {
+		return samlsp.ErrNoSession
+	}
+	return nil
+}
+
 func (s *SamlSessionEncoder) Logout(logoutid string) error {
 	result, err := s.db.Exec("DELETE FROM saml_session WHERE logoutid = $1", logoutid)
 	if err != nil {
@@ -162,12 +180,18 @@ func (s *SamlSessionEncoder) Logout(logoutid string) error {
 	return nil
 }
 
+func (s *SamlSessionEncoder) Cleanup() error {
+	_, err := s.db.Exec("DELETE FROM saml_session WHERE expiry < NOW()")
+	return err
+}
+
 func (s *SamlSession) GetAttributes() samlsp.Attributes {
 	return s.attributes
 }
 
 type IDContactSessionManager struct {
-	db *sql.DB
+	db      *sql.DB
+	timeout int // session timeout in minutes
 }
 
 type IDContactSession struct {
@@ -179,7 +203,7 @@ type IDContactSession struct {
 
 func (m *IDContactSessionManager) NewSession(attributes, continuation string, attributeURL *string) (*IDContactSession, error) {
 	id := GenerateID()
-	_, err := m.db.Exec("INSERT INTO idcontact_session (sessionid, attributes, continuation, attr_url) VALUES ($1, $2, $3, $4)", id, attributes, continuation, attributeURL)
+	_, err := m.db.Exec("INSERT INTO idcontact_session (sessionid, attributes, continuation, attr_url, expiry) VALUES ($1, $2, $3, $4, NOW() + ($5 * Interval '1 minute'))", id, attributes, continuation, attributeURL, m.timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +217,7 @@ func (m *IDContactSessionManager) NewSession(attributes, continuation string, at
 }
 
 func (m *IDContactSessionManager) GetSession(id string) (*IDContactSession, error) {
-	rows, err := m.db.Query("SELECT attributes, continuation, attr_url FROM idcontact_session WHERE sessionid = $1", id)
+	rows, err := m.db.Query("SELECT attributes, continuation, attr_url FROM idcontact_session WHERE sessionid = $1 AND expiry > NOW()", id)
 	if err != nil {
 		return nil, err
 	}
@@ -216,4 +240,9 @@ func (m *IDContactSessionManager) GetSession(id string) (*IDContactSession, erro
 		continuation: continuation,
 		attributeURL: attributeURL,
 	}, nil
+}
+
+func (m *IDContactSessionManager) Cleanup() error {
+	_, err := m.db.Exec("DELETE FROM idcontact_session WHERE expiry < NOW()")
+	return err
 }
