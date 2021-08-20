@@ -11,13 +11,14 @@ import (
 )
 
 // Construct an attribute JWT signed and encrypted with given keys
-func buildAttributeJWT(attributes map[string]string, signKey *rsa.PrivateKey, encryptionKey *rsa.PublicKey) ([]byte, error) {
+func buildAttributeJWT(attributes map[string]string, sessionUrl string, signKey *rsa.PrivateKey, encryptionKey *rsa.PublicKey) ([]byte, error) {
 	token := jwt.New()
 	token.Set(jwt.SubjectKey, "id-contact-attributes")
 	token.Set(jwt.IssuedAtKey, time.Now())
 	token.Set(jwt.ExpirationKey, time.Now().Add(time.Minute*5))
 	token.Set("status", "succes")
 	token.Set("attributes", attributes)
+	token.Set("session_url", sessionUrl)
 	signed, err := jwt.Sign(token, jwa.RS256, signKey)
 	if err != nil {
 		return nil, err

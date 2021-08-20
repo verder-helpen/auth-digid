@@ -35,11 +35,13 @@ type SamlSessionEncoder struct {
 type SamlSession struct {
 	attributes samlsp.Attributes
 	id         string
+	logoutid   string
 }
 
 func (s *SamlSessionEncoder) New(assertion *saml.Assertion) (samlsp.Session, error) {
 	// Setup data
 	id := GenerateID()
+	logoutid := GenerateID()
 	attributes := make(samlsp.Attributes)
 	for _, statement := range assertion.AttributeStatements {
 		for _, attribute := range statement.Attributes {
@@ -67,7 +69,7 @@ func (s *SamlSessionEncoder) New(assertion *saml.Assertion) (samlsp.Session, err
 		return nil, err
 	}
 
-	_, err = s.db.Exec("INSERT INTO saml_session (sessionid, attributes) VALUES ($1, $2)", id, string(encodedAttributes))
+	_, err = s.db.Exec("INSERT INTO saml_session (sessionid, logoutid, attributes) VALUES ($1, $2, $3)", id, logoutid, string(encodedAttributes))
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -75,6 +77,7 @@ func (s *SamlSessionEncoder) New(assertion *saml.Assertion) (samlsp.Session, err
 
 	return &SamlSession{
 		id:         id,
+		logoutid:   logoutid,
 		attributes: attributes,
 	}, nil
 }
@@ -84,7 +87,7 @@ func (s *SamlSessionEncoder) Encode(session samlsp.Session) (string, error) {
 }
 
 func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
-	rows, err := s.db.Query("SELECT attributes FROM saml_session WHERE sessionid = $1", id)
+	rows, err := s.db.Query("SELECT attributes, logoutid FROM saml_session WHERE sessionid = $1", id)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -95,7 +98,8 @@ func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 		return nil, samlsp.ErrNoSession
 	}
 	var encodedAttributes string
-	err = rows.Scan(&encodedAttributes)
+	var logoutid string
+	err = rows.Scan(&encodedAttributes, &logoutid)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -110,8 +114,26 @@ func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 
 	return &SamlSession{
 		id:         id,
+		logoutid:   logoutid,
 		attributes: attributes,
 	}, nil
+}
+
+func (s *SamlSessionEncoder) Logout(logoutid string) error {
+	result, err := s.db.Exec("DELETE FROM saml_session WHERE logoutid = $1", logoutid)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	aff, err := result.RowsAffected()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	if aff != 1 {
+		return samlsp.ErrNoSession
+	}
+	return nil
 }
 
 func (s *SamlSession) GetAttributes() samlsp.Attributes {
