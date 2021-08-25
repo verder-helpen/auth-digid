@@ -11,15 +11,25 @@ import (
 	"github.com/crewjam/saml/samlsp"
 )
 
-var authnContextClasses = map[string]int{
-	"urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport": 1, // Basis
-	"urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract":    2, // Midden
-	"urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard":                  3, // Substantieel
-	"urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI":               4, // Hoog
+const (
+	passwordProtectedTransport = "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
+	mobileTwoFactorContract    = "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"
+	smartcard                  = "urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"
+	smartcardPKI               = "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"
+)
+
+var digidAuthnContextClasses = map[string]string{
+	"Basis":        passwordProtectedTransport,
+	"Midden":       mobileTwoFactorContract,
+	"Substantieel": smartcard,
+	"Hoog":         smartcardPKI,
 }
 
-func IsDigiDAuthnContextClass(acc string) bool {
-	return authnContextClasses[acc] != 0
+var authnContextClasses = map[string]int{
+	passwordProtectedTransport: 1,
+	mobileTwoFactorContract:    2,
+	smartcard:                  3,
+	smartcardPKI:               4,
 }
 
 func CompareAuthnContextClass(minimum string, acc string) bool {

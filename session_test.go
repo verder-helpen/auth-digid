@@ -29,38 +29,51 @@ func setupDB(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestIsDigiDAuthnContextClass(t *testing.T) {
-	assert.True(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
-	assert.True(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
-	assert.True(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
-	assert.True(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
-	assert.False(t, IsDigiDAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+func TestMapDigiDAuthnContextClasses(t *testing.T) {
+	ref, ok := digidAuthnContextClasses["Basis"]
+	assert.Equal(t, ref, passwordProtectedTransport)
+	assert.True(t, ok)
+	ref, ok = digidAuthnContextClasses["Midden"]
+	assert.Equal(t, ref, mobileTwoFactorContract)
+	assert.True(t, ok)
+	ref, ok = digidAuthnContextClasses["Substantieel"]
+	assert.Equal(t, ref, smartcard)
+	assert.True(t, ok)
+	ref, ok = digidAuthnContextClasses["Hoog"]
+	assert.Equal(t, ref, smartcardPKI)
+	assert.True(t, ok)
+	ref, ok = digidAuthnContextClasses["urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"]
+	assert.False(t, ok)
+	assert.NotEqual(t, ref, passwordProtectedTransport)
+	assert.NotEqual(t, ref, mobileTwoFactorContract)
+	assert.NotEqual(t, ref, smartcard)
+	assert.NotEqual(t, ref, smartcardPKI)
 }
 
 func TestCompareAuthnContextClass(t *testing.T) {
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
+	assert.False(t, CompareAuthnContextClass(passwordProtectedTransport, "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+	assert.True(t, CompareAuthnContextClass(passwordProtectedTransport, passwordProtectedTransport))
+	assert.True(t, CompareAuthnContextClass(passwordProtectedTransport, mobileTwoFactorContract))
+	assert.True(t, CompareAuthnContextClass(passwordProtectedTransport, smartcard))
+	assert.True(t, CompareAuthnContextClass(passwordProtectedTransport, smartcardPKI))
 
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
+	assert.False(t, CompareAuthnContextClass(mobileTwoFactorContract, "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+	assert.False(t, CompareAuthnContextClass(mobileTwoFactorContract, passwordProtectedTransport))
+	assert.True(t, CompareAuthnContextClass(mobileTwoFactorContract, mobileTwoFactorContract))
+	assert.True(t, CompareAuthnContextClass(mobileTwoFactorContract, smartcard))
+	assert.True(t, CompareAuthnContextClass(mobileTwoFactorContract, smartcardPKI))
 
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
+	assert.False(t, CompareAuthnContextClass(smartcard, "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+	assert.False(t, CompareAuthnContextClass(smartcard, mobileTwoFactorContract))
+	assert.False(t, CompareAuthnContextClass(smartcard, passwordProtectedTransport))
+	assert.True(t, CompareAuthnContextClass(smartcard, smartcard))
+	assert.True(t, CompareAuthnContextClass(smartcard, smartcardPKI))
 
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"))
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"))
-	assert.False(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"))
-	assert.True(t, CompareAuthnContextClass("urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI", "urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"))
+	assert.False(t, CompareAuthnContextClass(smartcardPKI, "urn:oasis:names:tc:SAML:2.0:ac:classes:NotAnAuthnContextClass"))
+	assert.False(t, CompareAuthnContextClass(smartcardPKI, passwordProtectedTransport))
+	assert.False(t, CompareAuthnContextClass(smartcardPKI, mobileTwoFactorContract))
+	assert.False(t, CompareAuthnContextClass(smartcardPKI, smartcard))
+	assert.True(t, CompareAuthnContextClass(smartcardPKI, smartcardPKI))
 
 }
 

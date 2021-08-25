@@ -76,11 +76,12 @@ func ParseConfiguration() Configuration {
 
 	entityID := viper.GetString("EntityID")
 
-	viper.SetDefault("AuthnContextClassRef", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport")
-	authnContextClassRef := viper.GetString("AuthnContextClassRef")
-	if !IsDigiDAuthnContextClass(authnContextClassRef) {
-		fmt.Println("Invalid AuthnContextClassRef")
-		panic("Invalid AuthnContextClassRef")
+	viper.SetDefault("DigidRequiredAuthLevel", "Basis")
+	digidRequiredAuthLevel := viper.GetString("DigidRequiredAuthLevel")
+	authnContextClassRef, ok := digidAuthnContextClasses[digidRequiredAuthLevel]
+	if !ok {
+		fmt.Println("Invalid DigidRequiredAuthLevel")
+		panic("Invalid DigidRequiredAuthLevel")
 	}
 
 	// Load BRP configuration

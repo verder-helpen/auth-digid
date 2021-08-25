@@ -9,5 +9,5 @@ import (
 func TestConfiguration(t *testing.T) {
 	configuration := ParseConfiguration()
 
-	assert.Equal(t, configuration.AuthnContextClassRef, "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport")
+	assert.Equal(t, configuration.AuthnContextClassRef, passwordProtectedTransport)
 }
