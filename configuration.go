@@ -15,9 +15,10 @@ import (
 
 type Configuration struct {
 	// SAML service configuration
-	SamlKeyPair    tls.Certificate
-	IdpMetadataURL *url.URL
-	EntityID       string // Not mandatory
+	SamlKeyPair          tls.Certificate
+	IdpMetadataURL       *url.URL
+	EntityID             string // Not mandatory
+	AuthnContextClassRef string
 
 	// Keys used to create attribute JWTs
 	JwtSigningKey    *rsa.PrivateKey
@@ -46,6 +47,7 @@ func ParseConfiguration() Configuration {
 	viper.AddConfigPath(".")
 	viper.SetEnvPrefix("DIGID")
 	viper.AutomaticEnv()
+
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
@@ -73,6 +75,14 @@ func ParseConfiguration() Configuration {
 	}
 
 	entityID := viper.GetString("EntityID")
+
+	viper.SetDefault("DigidRequiredAuthLevel", "Basis")
+	digidRequiredAuthLevel := viper.GetString("DigidRequiredAuthLevel")
+	authnContextClassRef, ok := digidAuthnContextClasses[digidRequiredAuthLevel]
+	if !ok {
+		fmt.Println("Invalid DigidRequiredAuthLevel")
+		panic("Invalid DigidRequiredAuthLevel")
+	}
 
 	// Load BRP configuration
 	caCertFile := viper.GetString("CACerts")
@@ -121,9 +131,10 @@ func ParseConfiguration() Configuration {
 	}
 
 	return Configuration{
-		SamlKeyPair:    keypair,
-		IdpMetadataURL: idpMetadataURL,
-		EntityID:       entityID,
+		SamlKeyPair:          keypair,
+		IdpMetadataURL:       idpMetadataURL,
+		EntityID:             entityID,
+		AuthnContextClassRef: authnContextClassRef,
 
 		JwtSigningKey:    jwtSigningKey,
 		JwtEncryptionKey: jwtEncryptionKey,

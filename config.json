@@ -1,6 +1,9 @@
 {
   "SamlCertificate": "myservice.cert",
   "SamlKey": "myservice.key",
+  "BRPCert": "myservice.cert",
+  "BRPKey": "myservice.key",
+  "CACerts": "ca.cert",
   "IDPMetadataURL": "https://samltest.id/saml/idp",
   "ServerURL": "https://auth-digid.idcontact.test.tweede.golf",
   "JWTSigningKey": "signkey.pem",
