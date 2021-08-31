@@ -132,7 +132,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Construct authentication result JWT
-	logoutUrl := *c.ServerURL
+	logoutUrl := *c.InternalURL
 	logoutUrl.Path = path.Join(logoutUrl.Path, "update", samlsession.logoutid)
 	authToken, err := buildAttributeJWT(attributeResult, logoutUrl.String(), c.JwtSigningKey, c.JwtEncryptionKey)
 	if err != nil {
