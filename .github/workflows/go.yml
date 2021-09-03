@@ -10,6 +10,18 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
     - uses: actions/checkout@v2
 
@@ -22,7 +34,7 @@ jobs:
       run: go build -v ./...
 
     - name: Test
-      run: go test -v ./...
-    
+      run: go test -v ./... -ldflags "-X github.com/id-contact/auth-digid.testdb=postgres://postgres:postgres@localhost:5432/postgres"
+
     - name: Vet
       run: go vet -v ./...

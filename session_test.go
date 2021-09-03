@@ -279,7 +279,7 @@ func TestSamlSessions(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, testSession3, testSession6)
 
-	err = SamlSessionManager.Logout(testSession1t.id)
+	err = SamlSessionManager.Logout(testSession1t.logoutid)
 	require.NoError(t, err)
 
 	_, err = SamlSessionManager.Decode(testSession1t.id)
