@@ -89,8 +89,7 @@ func ParseConfiguration() Configuration {
 	digidRequiredAuthLevel := viper.GetString("DigidRequiredAuthLevel")
 	authnContextClassRef, ok := digidAuthnContextClasses[digidRequiredAuthLevel]
 	if !ok {
-		fmt.Println("Invalid DigidRequiredAuthLevel")
-		panic("Invalid DigidRequiredAuthLevel")
+		log.Fatal("Invalid DigidRequiredAuthLevel")
 	}
 
 	// Load BRP configuration

@@ -148,12 +148,12 @@ func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 func (s *SamlSessionEncoder) Logout(logoutid string) error {
 	result, err := s.db.Exec("DELETE FROM saml_session WHERE logoutid = $1", logoutid)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return err
 	}
 	aff, err := result.RowsAffected()
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return err
 	}
 	if aff != 1 {

@@ -108,7 +108,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	authnContextClass := samlsp.AttributeFromContext(r.Context(), "AuthnContextClassRef")
 	if !CompareAuthnContextClass(c.AuthnContextClassRef, authnContextClass) {
 		w.WriteHeader(500)
-		fmt.Println("AuthnContextClass too low", authnContextClass)
+		log.Error("AuthnContextClass too low", authnContextClass)
 		return
 	}
 
@@ -170,7 +170,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		fmt.Println(err)
+		log.Warn(err)
 		w.WriteHeader(400)
 		return
 	}
@@ -180,11 +180,11 @@ func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
 		// Handle logout request
 		err = c.SamlSessionManager.Logout(chi.URLParam(r, "logoutid"))
 		if err != nil {
-			fmt.Println("Logout failed: ", err)
+			log.Error("Logout failed: ", err)
 			// Note, this error shouldn't be propagated to remote
 		}
 	} else {
-		fmt.Println("Unrecognized update type ", updateType)
+		log.Warn("Unrecognized update type ", updateType)
 	}
 
 	w.WriteHeader(204)
@@ -196,11 +196,6 @@ func (c *Configuration) BuildHandler() http.Handler {
 		*c.IdpMetadataURL)
 	if err != nil {
 		log.Fatal("Failed to download IdP metadata: ", err)
-	}
-
-	db, err := sql.Open("pgx", c.DatabaseConnection)
-	if err != nil {
-		log.Fatal("Couldn't open database: ", err)
 	}
 
 	samlSP, err := samlsp.New(samlsp.Options{
