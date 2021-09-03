@@ -5,12 +5,13 @@ import (
 	"context"
 	"crypto/rsa"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
@@ -32,19 +33,19 @@ type StartResponse struct {
 
 // Start ID Contact authentication session
 func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Starting session")
+	log.Debug("Starting session")
 	// Extract request
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(500)
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 	var request StartRequest
 	err = json.Unmarshal(body, &request)
 	if err != nil {
 		w.WriteHeader(400)
-		fmt.Println(err)
+		log.Warn(err)
 		return
 	}
 
@@ -53,7 +54,7 @@ func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 		_, ok := c.AttributeMapping[attribute]
 		if !ok {
 			w.WriteHeader(400)
-			fmt.Println(err)
+			log.Warn(err)
 			return
 		}
 	}
@@ -62,13 +63,13 @@ func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 	encodedAttributes, err := json.Marshal(request.Attributes)
 	if err != nil {
 		w.WriteHeader(500)
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 	session, err := c.SessionManager.NewSession(string(encodedAttributes), request.Continuation, request.AttributeURL)
 	if err != nil {
 		w.WriteHeader(500)
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 
@@ -92,7 +93,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	session, err := c.SessionManager.GetSession(id)
 	if err != nil {
 		w.WriteHeader(400)
-		fmt.Println(err)
+		log.Warn(err)
 		return
 	}
 
@@ -100,14 +101,14 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal([]byte(session.attributes), &attributes)
 	if err != nil {
 		w.WriteHeader(500)
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 
 	authnContextClass := samlsp.AttributeFromContext(r.Context(), "AuthnContextClassRef")
 	if !CompareAuthnContextClass(c.AuthnContextClassRef, authnContextClass) {
 		w.WriteHeader(500)
-		fmt.Println("AuthnContextClass too low", authnContextClass)
+		log.Error("AuthnContextClass too low", authnContextClass)
 		return
 	}
 
@@ -116,7 +117,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	bsn := samlsession.attributes.Get("NameID")
 	if bsn[:9] != "s00000000" {
 		w.WriteHeader(500)
-		fmt.Println("Unexpected sectoral code", bsn[:9])
+		log.Error("Unexpected sectoral code", bsn[:9])
 		return
 	}
 	altbsn, ok := c.TestBSNMapping[bsn[10:]]
@@ -126,7 +127,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	attributeResult, err := GetBRPAttributes(c.BRPServer, bsn[10:], c.AttributeMapping, c.Client, c.CaCerts)
 	if err != nil {
 		w.WriteHeader(500)
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 
@@ -136,7 +137,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	authToken, err := buildAttributeJWT(attributeResult, logoutUrl.String(), c.JwtSigningKey, c.JwtEncryptionKey)
 	if err != nil {
 		w.WriteHeader(500)
-		fmt.Println(err)
+		log.Error(err)
 		return
 	}
 
@@ -145,11 +146,11 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		response, err := http.Post(*session.attributeURL, "application/jwt", bytes.NewReader(authToken))
 		if err != nil {
 			// Just log
-			fmt.Println(err)
+			log.Error(err)
 		} else {
 			defer response.Body.Close()
 			if response.StatusCode >= 300 {
-				fmt.Printf("attribute url failed (%d)\n", response.StatusCode)
+				log.Errorf("attribute url failed (%d)\n", response.StatusCode)
 			}
 		}
 		http.Redirect(w, r, session.continuation, 302)
@@ -157,7 +158,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		redirectURL, err := url.Parse(session.continuation)
 		if err != nil {
 			w.WriteHeader(500)
-			fmt.Println(err)
+			log.Error(err)
 			return
 		}
 		redirectURL.Query().Set("result", string(authToken))
@@ -169,7 +170,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		fmt.Println(err)
+		log.Warn(err)
 		w.WriteHeader(400)
 		return
 	}
@@ -179,11 +180,11 @@ func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
 		// Handle logout request
 		err = c.SamlSessionManager.Logout(chi.URLParam(r, "logoutid"))
 		if err != nil {
-			fmt.Println("Logout failed: ", err)
+			log.Error("Logout failed: ", err)
 			// Note, this error shouldn't be propagated to remote
 		}
 	} else {
-		fmt.Println("Unrecognized update type ", updateType)
+		log.Warn("Unrecognized update type ", updateType)
 	}
 
 	w.WriteHeader(204)
@@ -194,8 +195,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
 		*c.IdpMetadataURL)
 	if err != nil {
-		fmt.Println("Failed to download IdP metadata.")
-		panic(err)
+		log.Fatal("Failed to download IdP metadata: ", err)
 	}
 
 	samlSP, err := samlsp.New(samlsp.Options{
@@ -242,19 +242,46 @@ func (c *Configuration) BuildHandler() http.Handler {
 
 var release string
 
+type SentryLogHook struct{}
+
+func (t *SentryLogHook) Levels() []log.Level {
+	return []log.Level{
+		log.PanicLevel,
+		log.FatalLevel,
+		log.ErrorLevel,
+	}
+}
+
+func (t *SentryLogHook) Fire(event *log.Entry) error {
+	sentry_event := sentry.Event{
+		Message:  event.Message,
+		Contexts: event.Data,
+	}
+	if event.Level == log.ErrorLevel {
+		sentry_event.Level = sentry.LevelError
+	} else {
+		sentry_event.Level = sentry.LevelFatal
+	}
+	sentry.CaptureEvent(&sentry_event)
+	return nil
+}
+
 func main() {
 	configuration := ParseConfiguration()
 	if configuration.SentryDSN != "" {
+		// Setup sentry
 		err := sentry.Init(sentry.ClientOptions{
 			Dsn:         configuration.SentryDSN,
 			Release:     release,
 			Environment: configuration.ServerURL.String(),
 		})
 		if err != nil {
-			fmt.Println("Error starting sentry")
-			panic(err)
+			log.Fatal("Error starting sentry: ", err)
 		}
 		defer sentry.Recover()
+
+		// And hook into logging
+		log.AddHook(&SentryLogHook{})
 	}
 	http.Handle("/", configuration.BuildHandler())
 	http.ListenAndServe(":8000", nil)

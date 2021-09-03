@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"net/url"
 
+	log "github.com/sirupsen/logrus"
+
 	jwtkeys "github.com/dgrijalva/jwt-go/v4"
 	"github.com/spf13/viper"
 )
@@ -50,7 +52,17 @@ func ParseConfiguration() Configuration {
 
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		log.Fatal(fmt.Errorf("Fatal error config file: %s \n", err))
+	}
+
+	// Configure logging
+	loglevel := viper.GetString("LogLevel")
+	if loglevel != "" {
+		parsedLevel, err := log.ParseLevel(loglevel)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.SetLevel(parsedLevel)
 	}
 
 	// Load saml configuration
@@ -58,20 +70,17 @@ func ParseConfiguration() Configuration {
 	samlKey := viper.GetString("SamlKey")
 	keypair, err := tls.LoadX509KeyPair(samlCertificate, samlKey)
 	if err != nil {
-		fmt.Println("Failed to read saml keypair")
-		panic(err)
+		log.Fatal("Failed to read saml keypair: ", err)
 	}
 	keypair.Leaf, err = x509.ParseCertificate(keypair.Certificate[0])
 	if err != nil {
-		fmt.Println("Failed to parse leaf certificate")
-		panic(err)
+		log.Fatal("Failed to parse leaf certificate: ", err)
 	}
 
 	rawIdpURL := viper.GetString("IDPMetadataURL")
 	idpMetadataURL, err := url.Parse(rawIdpURL)
 	if err != nil {
-		fmt.Println("Invalid identity provider metadata url")
-		panic(err)
+		log.Fatal("Invalid identity provider metadata url: ", err)
 	}
 
 	entityID := viper.GetString("EntityID")
@@ -80,43 +89,37 @@ func ParseConfiguration() Configuration {
 	digidRequiredAuthLevel := viper.GetString("DigidRequiredAuthLevel")
 	authnContextClassRef, ok := digidAuthnContextClasses[digidRequiredAuthLevel]
 	if !ok {
-		fmt.Println("Invalid DigidRequiredAuthLevel")
-		panic("Invalid DigidRequiredAuthLevel")
+		log.Fatal("Invalid DigidRequiredAuthLevel")
 	}
 
 	// Load BRP configuration
 	caCertFile := viper.GetString("CACerts")
 	caCerts, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		fmt.Println("Failed to read ca certs")
-		panic(err)
+		log.Fatal("Failed to read ca certs: ", err)
 	}
 	clientCertKey := viper.GetString("BRPKey")
 	clientCertFile := viper.GetString("BRPCert")
 	clientCert, err := tls.LoadX509KeyPair(clientCertFile, clientCertKey)
 	if err != nil {
-		fmt.Println("Failed to load brp key")
-		panic(err)
+		log.Fatal("Failed to load brp key: ", err)
 	}
 
 	// Load encryption keys
 	jwtSigningKeyFile := viper.GetString("JWTSigningKey")
 	jwtSigningKeyPEM, err := ioutil.ReadFile(jwtSigningKeyFile)
 	if err != nil {
-		fmt.Println("Failed to read jwt siging key")
-		panic(err)
+		log.Fatal("Failed to read jwt siging key: ", err)
 	}
 	jwtSigningKey, err := jwtkeys.ParseRSAPrivateKeyFromPEM(jwtSigningKeyPEM)
 	if err != nil {
-		fmt.Println("Failed to parse jwt signing key")
-		panic(err)
+		log.Fatal("Failed to parse jwt signing key: ", err)
 	}
 
 	jwtEncryptionKeyFile := viper.GetString("JWTEncryptionKey")
 	jwtEncryptionKeyPEM, err := ioutil.ReadFile(jwtEncryptionKeyFile)
 	if err != nil {
-		fmt.Println("Failed to read jwt encryption key")
-		panic(err)
+		log.Fatal("Failed to read jwt encryption key: ", err)
 	}
 	jwtEncryptionKey, err := jwtkeys.ParseRSAPublicKeyFromPEM(jwtEncryptionKeyPEM)
 
@@ -126,8 +129,7 @@ func ParseConfiguration() Configuration {
 	databaseConnection := viper.GetString("DatabaseConnection")
 	db, err := sql.Open("pgx", databaseConnection)
 	if err != nil {
-		fmt.Println("Couldn't open database")
-		panic(err)
+		log.Fatal("Couldn't open database: ", err)
 	}
 
 	return Configuration{
@@ -151,6 +153,7 @@ func ParseConfiguration() Configuration {
 		SessionManager: &IDContactSessionManager{
 			db: db,
 		},
+		SentryDSN:        viper.GetString("SentryDSN"),
 		AttributeMapping: viper.GetStringMapString("AttributeMapping"),
 		TestBSNMapping:   viper.GetStringMapString("BSNMap"),
 	}
