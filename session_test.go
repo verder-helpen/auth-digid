@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/crewjam/saml"
 	"github.com/stretchr/testify/assert"
@@ -130,7 +131,8 @@ func TestSamlSessions(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 	SamlSessionManager := SamlSessionEncoder{
-		db,
+		db:      db,
+		timeout: 15,
 	}
 
 	testSamlAssertion1 := saml.Assertion{
@@ -289,13 +291,93 @@ func TestSamlSessions(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestSamlSessionTimeout(t *testing.T) {
+	setupDB(t)
+	db, err := sql.Open("pgx", testdb)
+	require.NoError(t, err)
+	defer db.Close()
+	SamlSessionManager := SamlSessionEncoder{
+		db:      db,
+		timeout: 1,
+	}
+
+	testSamlAssertion := saml.Assertion{
+		Subject: &saml.Subject{
+			NameID: &saml.NameID{
+				Value: "test",
+			},
+		},
+		AuthnStatements: []saml.AuthnStatement{
+			{
+				AuthnContext: saml.AuthnContext{
+					AuthnContextClassRef: &saml.AuthnContextClassRef{
+						Value: "level1",
+					},
+				},
+			},
+		},
+		AttributeStatements: []saml.AttributeStatement{
+			{
+				Attributes: []saml.Attribute{
+					{
+						Name: "A",
+						Values: []saml.AttributeValue{
+							{
+								Value: "B",
+							},
+						},
+					},
+					{
+						Name: "NameID",
+						Values: []saml.AttributeValue{
+							{
+								Value: "blaat",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	testSession1, err := SamlSessionManager.New(&testSamlAssertion)
+	testSession1t := testSession1.(*SamlSession)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"B"}, testSession1t.attributes["A"])
+	assert.ElementsMatch(t, []string{"blaat", "test"}, testSession1t.attributes["NameID"])
+	assert.ElementsMatch(t, []string{"level1"}, testSession1t.attributes["AuthnContextClassRef"])
+	assert.Equal(t, testSession1t.attributes, testSession1t.GetAttributes())
+
+	testSession2, err := SamlSessionManager.Decode(testSession1t.id)
+	assert.NoError(t, err)
+	assert.Equal(t, testSession1, testSession2)
+
+	time.Sleep(time.Second * 30)
+	testSession3, err := SamlSessionManager.Decode(testSession1t.id)
+	assert.NoError(t, err)
+	assert.Equal(t, testSession1, testSession3)
+
+	err = SamlSessionManager.MarkActive(testSession1t.logoutid)
+	assert.NoError(t, err)
+
+	time.Sleep(time.Second * 35)
+	testSession4, err := SamlSessionManager.Decode(testSession1t.id)
+	assert.NoError(t, err)
+	assert.Equal(t, testSession1, testSession4)
+
+	time.Sleep(time.Second * 30)
+	_, err = SamlSessionManager.Decode(testSession1t.id)
+	assert.Error(t, err)
+}
+
 func TestIDCSessions(t *testing.T) {
 	setupDB(t)
 	db, err := sql.Open("pgx", testdb)
 	require.NoError(t, err)
 	defer db.Close()
 	SessionManager := IDContactSessionManager{
-		db,
+		db:      db,
+		timeout: 15,
 	}
 
 	session1, err := SessionManager.NewSession("a", "b", nil)
@@ -321,5 +403,37 @@ func TestIDCSessions(t *testing.T) {
 	assert.Equal(t, session2, session4)
 
 	_, err = SessionManager.GetSession("doesnotexist")
+	assert.Error(t, err)
+}
+
+func TestIDCSessionTimeout(t *testing.T) {
+	setupDB(t)
+	db, err := sql.Open("pgx", testdb)
+	require.NoError(t, err)
+	defer db.Close()
+	SessionManager := IDContactSessionManager{
+		db:      db,
+		timeout: 1,
+	}
+
+	session1, err := SessionManager.NewSession("a", "b", nil)
+	require.NoError(t, err)
+	assert.Equal(t, "a", session1.attributes)
+	assert.Equal(t, "b", session1.continuation)
+	assert.Equal(t, (*string)(nil), session1.attributeURL)
+
+	session2, err := SessionManager.GetSession(session1.id)
+	assert.NoError(t, err)
+	assert.Equal(t, session1, session2)
+
+	time.Sleep(time.Second * 30)
+
+	session3, err := SessionManager.GetSession(session1.id)
+	assert.NoError(t, err)
+	assert.Equal(t, session1, session3)
+
+	time.Sleep(time.Second * 35)
+
+	_, err = SessionManager.GetSession(session1.id)
 	assert.Error(t, err)
 }
