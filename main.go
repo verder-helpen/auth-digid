@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"time"
 
@@ -280,7 +281,8 @@ func main() {
 		err := sentry.Init(sentry.ClientOptions{
 			Dsn:         configuration.SentryDSN,
 			Release:     release,
-			Environment: configuration.ServerURL.String(),
+			ServerName:  "auth-digid",
+			Environment: os.Getenv("ENVIRONMENT"),
 		})
 		if err != nil {
 			log.Fatal("Error starting sentry: ", err)
