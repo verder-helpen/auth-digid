@@ -143,9 +143,67 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// And a confirmation screen JWT
+	logoutURL := *c.ServerURL
+	logoutURL.Query().Set("type", "logout")
+	confirmURL := *c.ServerURL
+	confirmURL.Path = path.Join(confirmURL.Path, "confirm", id)
+	confirmationToken, err := buildConfirmationJWT(attributeResult, logoutURL.String(), confirmURL.String(), c.ConfirmationSigningKey)
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+
+	// Store the information needed for confirmation
+	err = c.SamlSessionManager.SetIDContactSession(samlsession, id, string(authToken))
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+
+	// And redirect the user to the confirmation screen
+	confirmationScreenUrl := *c.ConfirmationURL
+	confirmationScreenUrl.Query().Set("data", string(confirmationToken))
+	http.Redirect(w, r, confirmationScreenUrl.String(), 302)
+}
+
+func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
+	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
+	url_sessionid := chi.URLParam(r, "sessionid")
+
+	// this is activity on the session, so mark it
+	c.SamlSessionManager.MarkActive(samlsession.logoutid)
+
+	// Get jwt and session id
+	sessionid, authToken, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	if err == samlsp.ErrNoSession {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+	if url_sessionid != sessionid {
+		w.WriteHeader(400)
+		log.Warn("Confirmation received from user for session that is not it's most current")
+		return
+	}
+
+	session, err := c.SessionManager.GetSession(sessionid)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+
 	// And deliver it appropriately
 	if session.attributeURL != nil {
-		response, err := http.Post(*session.attributeURL, "application/jwt", bytes.NewReader(authToken))
+		response, err := http.Post(*session.attributeURL, "application/jwt", bytes.NewReader([]byte(authToken)))
 		if err != nil {
 			// Just log
 			log.Error(err)
@@ -163,7 +221,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 			log.Error(err)
 			return
 		}
-		redirectURL.Query().Set("result", string(authToken))
+		redirectURL.Query().Set("result", authToken)
 		http.Redirect(w, r, redirectURL.String(), 302)
 	}
 }

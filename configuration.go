@@ -26,6 +26,10 @@ type Configuration struct {
 	JwtSigningKey    *rsa.PrivateKey
 	JwtEncryptionKey *rsa.PublicKey
 
+	// Confirmation screen configuration
+	ConfirmationURL        *url.URL
+	ConfirmationSigningKey *rsa.PrivateKey
+
 	// BRP configuration
 	BRPServer string
 	Client    tls.Certificate
@@ -124,6 +128,17 @@ func ParseConfiguration() Configuration {
 	}
 	jwtEncryptionKey, err := jwtkeys.ParseRSAPublicKeyFromPEM(jwtEncryptionKeyPEM)
 
+	// Confirmation data
+	confirmationURL, err := url.Parse(viper.GetString("ConfirmationURL"))
+	confirmationPEM, err := ioutil.ReadFile(viper.GetString("ConfirmationKey"))
+	if err != nil {
+		log.Fatal("Failed to read confirmation jwt signing key: ", err)
+	}
+	confirmationKey, err := jwtkeys.ParseRSAPrivateKeyFromPEM(confirmationPEM)
+	if err != nil {
+		log.Fatal("Failed to parse confirmation jwt signing key: ", err)
+	}
+
 	// General server data
 	rawServerURL := viper.GetString("ServerURL")
 	serverURL, err := url.Parse(rawServerURL)
@@ -149,6 +164,9 @@ func ParseConfiguration() Configuration {
 
 		JwtSigningKey:    jwtSigningKey,
 		JwtEncryptionKey: jwtEncryptionKey,
+
+		ConfirmationURL:        confirmationURL,
+		ConfirmationSigningKey: confirmationKey,
 
 		CaCerts:   caCerts,
 		BRPServer: viper.GetString("BRPServer"),

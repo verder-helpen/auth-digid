@@ -146,6 +146,45 @@ func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 	}, nil
 }
 
+func (s *SamlSessionEncoder) SetIDContactSession(session *SamlSession, id_contact_session string, jwt string) error {
+	result, err := s.db.Exec("UPDATE saml_session SET idcontact_session_id = (SELECT id FROM idcontact_session WHERE sessionid=$2), result_jwt = $3 WHERE sessionid = $1", session.id, id_contact_session, jwt)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	aff, err := result.RowsAffected()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	if aff != 1 {
+		return samlsp.ErrNoSession
+	}
+	return nil
+}
+
+func (s *SamlSessionEncoder) GetIDContactSession(session *SamlSession) (string, string, error) {
+	rows, err := s.db.Query("SELECT idcontact_session.sessionid, result_jwt FROM saml_session INNER JOIN idcontact_session ON saml_session.idcontact_session_id = idcontact_session.id")
+	if err != nil {
+		log.Error(err)
+		return "", "", err
+	}
+
+	defer rows.Close()
+	if !rows.Next() {
+		return "", "", samlsp.ErrNoSession
+	}
+
+	var session_id, result_jwt string
+	err = rows.Scan(&session_id, &result_jwt)
+	if err != nil {
+		log.Error(err)
+		return "", "", err
+	}
+
+	return session_id, result_jwt, nil
+}
+
 func (s *SamlSessionEncoder) MarkActive(logoutid string) error {
 	result, err := s.db.Exec("UPDATE saml_session SET expiry = NOW() + ($2 * Interval '1 minute') WHERE logoutid = $1 and expiry > NOW()", logoutid, s.timeout)
 	if err != nil {
@@ -181,7 +220,7 @@ func (s *SamlSessionEncoder) Logout(logoutid string) error {
 }
 
 func (s *SamlSessionEncoder) Cleanup() error {
-	_, err := s.db.Exec("DELETE FROM saml_session WHERE expiry < NOW()")
+	_, err := s.db.Exec("DELETE FROM saml_session WHERE expiry < NOW() - Interval '1 minute'")
 	return err
 }
 
@@ -243,6 +282,6 @@ func (m *IDContactSessionManager) GetSession(id string) (*IDContactSession, erro
 }
 
 func (m *IDContactSessionManager) Cleanup() error {
-	_, err := m.db.Exec("DELETE FROM idcontact_session WHERE expiry < NOW()")
+	_, err := m.db.Exec("DELETE FROM idcontact_session WHERE expiry < NOW() - Interval '1 minute'")
 	return err
 }

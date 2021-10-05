@@ -6,6 +6,8 @@
   "CACerts": "ca.cert",
   "IDPMetadataURL": "https://samltest.id/saml/idp",
   "ServerURL": "https://auth-digid.idcontact.test.tweede.golf",
+  "ConfirmationURL": "https://example.com",
+  "ConfirmationKey": "signkey.pem",
   "JWTSigningKey": "signkey.pem",
   "JWTEncryptionKey": "encryptionkey.pem",
   "AttributeMapping": {

@@ -437,3 +437,78 @@ func TestIDCSessionTimeout(t *testing.T) {
 	_, err = SessionManager.GetSession(session1.id)
 	assert.Error(t, err)
 }
+
+func TestSamlSessionIDContactMapping(t *testing.T) {
+	setupDB(t)
+	db, err := sql.Open("pgx", testdb)
+	require.NoError(t, err)
+	defer db.Close()
+	SessionManager := IDContactSessionManager{
+		db:      db,
+		timeout: 1,
+	}
+	SamlSessionManager := SamlSessionEncoder{
+		db:      db,
+		timeout: 1,
+	}
+
+	testSamlAssertion := saml.Assertion{
+		Subject: &saml.Subject{
+			NameID: &saml.NameID{
+				Value: "test",
+			},
+		},
+		AuthnStatements: []saml.AuthnStatement{
+			{
+				AuthnContext: saml.AuthnContext{
+					AuthnContextClassRef: &saml.AuthnContextClassRef{
+						Value: "level1",
+					},
+				},
+			},
+		},
+		AttributeStatements: []saml.AttributeStatement{
+			{
+				Attributes: []saml.Attribute{
+					{
+						Name: "A",
+						Values: []saml.AttributeValue{
+							{
+								Value: "B",
+							},
+						},
+					},
+					{
+						Name: "NameID",
+						Values: []saml.AttributeValue{
+							{
+								Value: "blaat",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	testSession1, err := SamlSessionManager.New(&testSamlAssertion)
+	testSession1t := testSession1.(*SamlSession)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"B"}, testSession1t.attributes["A"])
+	assert.ElementsMatch(t, []string{"blaat", "test"}, testSession1t.attributes["NameID"])
+	assert.ElementsMatch(t, []string{"level1"}, testSession1t.attributes["AuthnContextClassRef"])
+	assert.Equal(t, testSession1t.attributes, testSession1t.GetAttributes())
+
+	session1, err := SessionManager.NewSession("a", "b", nil)
+	require.NoError(t, err)
+	assert.Equal(t, "a", session1.attributes)
+	assert.Equal(t, "b", session1.continuation)
+	assert.Equal(t, (*string)(nil), session1.attributeURL)
+
+	err = SamlSessionManager.SetIDContactSession(testSession1t, session1.id, "testjwt")
+	require.NoError(t, err)
+	sessionid, jwt, err := SamlSessionManager.GetIDContactSession(testSession1t)
+	require.NoError(t, err)
+	assert.Equal(t, session1.id, sessionid)
+	assert.Equal(t, "testjwt", jwt)
+}
