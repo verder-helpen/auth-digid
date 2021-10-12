@@ -146,8 +146,8 @@ func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 	}, nil
 }
 
-func (s *SamlSessionEncoder) SetIDContactSession(session *SamlSession, id_contact_session string, jwt string) error {
-	result, err := s.db.Exec("UPDATE saml_session SET idcontact_session_id = (SELECT id FROM idcontact_session WHERE sessionid=$2), result_jwt = $3 WHERE sessionid = $1", session.id, id_contact_session, jwt)
+func (s *SamlSessionEncoder) SetIDContactSession(session *SamlSession, id_contact_session string, session_attributes string) error {
+	result, err := s.db.Exec("UPDATE saml_session SET idcontact_session_id = (SELECT id FROM idcontact_session WHERE sessionid=$2), session_attributes = $3 WHERE sessionid = $1", session.id, id_contact_session, session_attributes)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -164,7 +164,7 @@ func (s *SamlSessionEncoder) SetIDContactSession(session *SamlSession, id_contac
 }
 
 func (s *SamlSessionEncoder) GetIDContactSession(session *SamlSession) (string, string, error) {
-	rows, err := s.db.Query("SELECT idcontact_session.sessionid, result_jwt FROM saml_session INNER JOIN idcontact_session ON saml_session.idcontact_session_id = idcontact_session.id")
+	rows, err := s.db.Query("SELECT idcontact_session.sessionid, session_attributes FROM saml_session INNER JOIN idcontact_session ON saml_session.idcontact_session_id = idcontact_session.id")
 	if err != nil {
 		log.Error(err)
 		return "", "", err
@@ -175,14 +175,14 @@ func (s *SamlSessionEncoder) GetIDContactSession(session *SamlSession) (string, 
 		return "", "", samlsp.ErrNoSession
 	}
 
-	var session_id, result_jwt string
-	err = rows.Scan(&session_id, &result_jwt)
+	var session_id, session_attributes string
+	err = rows.Scan(&session_id, &session_attributes)
 	if err != nil {
 		log.Error(err)
 		return "", "", err
 	}
 
-	return session_id, result_jwt, nil
+	return session_id, session_attributes, nil
 }
 
 func (s *SamlSessionEncoder) MarkActive(logoutid string) error {

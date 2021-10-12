@@ -20,7 +20,7 @@ CREATE TABLE "saml_session" (
   "attributes" text NOT NULL,
   "expiry" timestamp,
   "idcontact_session_id" integer REFERENCES "idcontact_session" ("id") ON DELETE SET NULL,
-  "result_jwt" text,
+  "session_attributes" text,
   PRIMARY KEY("id")
 );
 

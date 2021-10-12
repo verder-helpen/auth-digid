@@ -133,10 +133,8 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Construct authentication result JWT
-	logoutUrl := *c.InternalURL
-	logoutUrl.Path = path.Join(logoutUrl.Path, "update", samlsession.logoutid)
-	authToken, err := buildAttributeJWT(attributeResult, logoutUrl.String(), c.JwtSigningKey, c.JwtEncryptionKey)
+	// Encode attributes
+	attributesJSON, err := json.Marshal(attributeResult)
 	if err != nil {
 		w.WriteHeader(500)
 		log.Error(err)
@@ -148,7 +146,9 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	logoutURL.Query().Set("type", "logout")
 	confirmURL := *c.ServerURL
 	confirmURL.Path = path.Join(confirmURL.Path, "confirm", id)
-	confirmationToken, err := buildConfirmationJWT(attributeResult, logoutURL.String(), confirmURL.String(), c.ConfirmationSigningKey)
+	attributeURL := *c.ServerURL
+	attributeURL.Path = path.Join(attributeURL.Path, "attributes", id)
+	confirmationToken, err := buildConfirmationJWT(attributeURL.String(), logoutURL.String(), confirmURL.String(), c.ConfirmationSigningKey)
 	if err != nil {
 		w.WriteHeader(500)
 		log.Error(err)
@@ -156,7 +156,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store the information needed for confirmation
-	err = c.SamlSessionManager.SetIDContactSession(samlsession, id, string(authToken))
+	err = c.SamlSessionManager.SetIDContactSession(samlsession, id, string(attributesJSON))
 	if err != nil {
 		w.WriteHeader(500)
 		log.Error(err)
@@ -169,6 +169,48 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, confirmationScreenUrl.String(), 302)
 }
 
+func (c *Configuration) getAttributes(w http.ResponseWriter, r *http.Request) {
+	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
+	url_sessionid := chi.URLParam(r, "sessionid")
+
+	// this is activity on the session, so mark it
+	c.SamlSessionManager.MarkActive(samlsession.logoutid)
+
+	// Get jwt and session id
+	sessionid, attributeJSON, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	if err == samlsp.ErrNoSession {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+	if url_sessionid != sessionid {
+		w.WriteHeader(400)
+		log.Warn("Confirmation received from user for session that is not it's most current")
+		return
+	}
+
+	// check id contact session exists
+	_, err = c.SessionManager.GetSession(sessionid)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+
+	// Return attributes
+	_, err = w.Write([]byte(attributeJSON))
+	if err != nil {
+		// there is no good way to recover the http session here, so just log and exit
+		log.Error(err)
+		return
+	}
+}
+
 func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
 	url_sessionid := chi.URLParam(r, "sessionid")
@@ -177,7 +219,7 @@ func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 	c.SamlSessionManager.MarkActive(samlsession.logoutid)
 
 	// Get jwt and session id
-	sessionid, authToken, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	sessionid, attributesJSON, err := c.SamlSessionManager.GetIDContactSession(samlsession)
 	if err == samlsp.ErrNoSession {
 		w.WriteHeader(400)
 		log.Warn(err)
@@ -201,6 +243,23 @@ func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Construct authentication result JWT
+	var attributes map[string]string
+	err = json.Unmarshal([]byte(attributesJSON), &attributes)
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+	logoutUrl := *c.InternalURL
+	logoutUrl.Path = path.Join(logoutUrl.Path, "update", samlsession.logoutid)
+	authToken, err := buildAttributeJWT(attributes, logoutUrl.String(), c.JwtSigningKey, c.JwtEncryptionKey)
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+
 	// And deliver it appropriately
 	if session.attributeURL != nil {
 		response, err := http.Post(*session.attributeURL, "application/jwt", bytes.NewReader([]byte(authToken)))
@@ -221,7 +280,7 @@ func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 			log.Error(err)
 			return
 		}
-		redirectURL.Query().Set("result", authToken)
+		redirectURL.Query().Set("result", string(authToken))
 		http.Redirect(w, r, redirectURL.String(), 302)
 	}
 }
@@ -297,6 +356,8 @@ func (c *Configuration) BuildHandler() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(samlSP.RequireAccount)
 		r.Get("/session/{sessionid}", c.doLogin)
+		r.Get("/attributes/{sessionid}", c.getAttributes)
+		r.Post("/confirm/{sessionid}", c.doConfirm)
 	})
 
 	r.Post("/start_authentication", c.startSession)

@@ -32,12 +32,12 @@ func buildAttributeJWT(attributes map[string]string, sessionUrl string, signKey 
 	return jwe.Encrypt(outerJSON, jwa.RSA_OAEP, encryptionKey, jwa.A128CBC_HS256, jwa.NoCompress)
 }
 
-func buildConfirmationJWT(attributes map[string]string, logoutURL string, confirmURL string, signKey *rsa.PrivateKey) ([]byte, error) {
+func buildConfirmationJWT(attributeURL string, logoutURL string, confirmURL string, signKey *rsa.PrivateKey) ([]byte, error) {
 	token := jwt.New()
 	token.Set(jwt.SubjectKey, "id-contact-auth-digid-confirm")
 	token.Set(jwt.IssuedAtKey, time.Now())
 	token.Set(jwt.ExpirationKey, time.Now().Add(time.Minute*5))
-	token.Set("attributes", attributes)
+	token.Set("attribute_url", attributeURL)
 	token.Set("logout_url", logoutURL)
 	token.Set("confirm_url", confirmURL)
 	return jwt.Sign(token, jwa.RS256, signKey)

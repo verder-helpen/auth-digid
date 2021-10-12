@@ -127,9 +127,15 @@ func ParseConfiguration() Configuration {
 		log.Fatal("Failed to read jwt encryption key: ", err)
 	}
 	jwtEncryptionKey, err := jwtkeys.ParseRSAPublicKeyFromPEM(jwtEncryptionKeyPEM)
+	if err != nil {
+		log.Fatal("Failed to parse jwt encryption key: ", err)
+	}
 
 	// Confirmation data
 	confirmationURL, err := url.Parse(viper.GetString("ConfirmationURL"))
+	if err != nil {
+		log.Fatal("Could not parse confirmation url: ", err)
+	}
 	confirmationPEM, err := ioutil.ReadFile(viper.GetString("ConfirmationKey"))
 	if err != nil {
 		log.Fatal("Failed to read confirmation jwt signing key: ", err)
