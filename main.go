@@ -143,6 +143,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 
 	// And a confirmation screen JWT
 	logoutURL := *c.ServerURL
+	logoutURL.Path = path.Join(logoutURL.Path, "update", samlsession.logoutid)
 	logoutQuery := logoutURL.Query()
 	logoutQuery.Set("type", "logout")
 	logoutURL.RawQuery = logoutQuery.Encode()
