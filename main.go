@@ -143,7 +143,9 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 
 	// And a confirmation screen JWT
 	logoutURL := *c.ServerURL
-	logoutURL.Query().Set("type", "logout")
+	logoutQuery := logoutURL.Query()
+	logoutQuery.Set("type", "logout")
+	logoutURL.RawQuery = logoutQuery.Encode()
 	confirmURL := *c.ServerURL
 	confirmURL.Path = path.Join(confirmURL.Path, "confirm", id)
 	attributeURL := *c.ServerURL
@@ -165,7 +167,9 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 
 	// And redirect the user to the confirmation screen
 	confirmationScreenUrl := *c.ConfirmationURL
-	confirmationScreenUrl.Query().Set("data", string(confirmationToken))
+	confirmQuery := confirmationScreenUrl.Query()
+	confirmQuery.Set("data", string(confirmationToken))
+	confirmationScreenUrl.RawQuery = confirmQuery.Encode()
 	http.Redirect(w, r, confirmationScreenUrl.String(), 302)
 }
 
@@ -280,7 +284,9 @@ func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 			log.Error(err)
 			return
 		}
-		redirectURL.Query().Set("result", string(authToken))
+		redirectQuery := redirectURL.Query()
+		redirectQuery.Set("result", string(authToken))
+		redirectURL.RawQuery = redirectQuery.Encode()
 		http.Redirect(w, r, redirectURL.String(), 302)
 	}
 }
