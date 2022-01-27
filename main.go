@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rsa"
+	"crypto/tls"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/crewjam/saml"
+  // "github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
@@ -347,19 +348,25 @@ func (c *Configuration) BuildHandler() http.Handler {
 		log.Fatal("Failed to download IdP metadata: ", err)
 	}
 
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{c.SamlKeyPair},
+	}
+	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	client := &http.Client{Transport: transport}
+
 	samlSP, err := samlsp.New(samlsp.Options{
-		EntityID:             c.EntityID,
-		URL:                  *c.ServerURL,
-		Key:                  c.SamlKeyPair.PrivateKey.(*rsa.PrivateKey),
-		Certificate:          c.SamlKeyPair.Leaf,
-		TLSClientCertificate: &c.SamlKeyPair,
-		IDPMetadata:          idpMetadata,
-		SignRequest:          true,
-		UseArtifactResponse:  true,
-		RequestedAuthnContext: &saml.RequestedAuthnContext{
-			Comparison:           "minimum",
-			AuthnContextClassRef: c.AuthnContextClassRef,
-		},
+		EntityID:            c.EntityID,
+		URL:                 *c.ServerURL,
+		Key:                 c.SamlKeyPair.PrivateKey.(*rsa.PrivateKey),
+		Certificate:         c.SamlKeyPair.Leaf,
+		HTTPClient:          client,
+		IDPMetadata:         idpMetadata,
+		SignRequest:         true,
+		UseArtifactResponse: true,
+		// RequestedAuthnContext: &saml.RequestedAuthnContext{
+		// 	Comparison:           "minimum",
+		// 	AuthnContextClassRef: c.AuthnContextClassRef,
+		// },
 	})
 	samlSP.Session = &samlsp.CookieSessionProvider{
 		Name:     "samlsession",
