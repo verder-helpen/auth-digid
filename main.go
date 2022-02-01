@@ -15,7 +15,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-  // "github.com/crewjam/saml"
+	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
@@ -363,10 +363,10 @@ func (c *Configuration) BuildHandler() http.Handler {
 		IDPMetadata:         idpMetadata,
 		SignRequest:         true,
 		UseArtifactResponse: true,
-		// RequestedAuthnContext: &saml.RequestedAuthnContext{
-		// 	Comparison:           "minimum",
-		// 	AuthnContextClassRef: c.AuthnContextClassRef,
-		// },
+		RequestedAuthnContext: &saml.RequestedAuthnContext{
+			Comparison:           "minimum",
+			AuthnContextClassRef: c.AuthnContextClassRef,
+		},
 	})
 	samlSP.Session = &samlsp.CookieSessionProvider{
 		Name:     "samlsession",
