@@ -141,23 +141,6 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// And a confirmation screen JWT
-	logoutURL := *c.ServerURL
-	logoutURL.Path = path.Join(logoutURL.Path, "update", samlsession.logoutid)
-	logoutQuery := logoutURL.Query()
-	logoutQuery.Set("type", "logout")
-	logoutURL.RawQuery = logoutQuery.Encode()
-	confirmURL := *c.ServerURL
-	confirmURL.Path = path.Join(confirmURL.Path, "confirm", id)
-	attributeURL := *c.ServerURL
-	attributeURL.Path = path.Join(attributeURL.Path, "attributes", id)
-	confirmationToken, err := buildConfirmationJWT(attributeURL.String(), logoutURL.String(), confirmURL.String(), c.ConfirmationSigningKey)
-	if err != nil {
-		w.WriteHeader(500)
-		log.Error(err)
-		return
-	}
-
 	// Store the information needed for confirmation
 	err = c.SamlSessionManager.SetIDContactSession(samlsession, id, string(attributesJSON))
 	if err != nil {
@@ -166,15 +149,12 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// And redirect the user to the confirmation screen
-	confirmationScreenUrl := *c.ConfirmationURL
-	confirmQuery := confirmationScreenUrl.Query()
-	confirmQuery.Set("data", string(confirmationToken))
-	confirmationScreenUrl.RawQuery = confirmQuery.Encode()
-	http.Redirect(w, r, confirmationScreenUrl.String(), 302)
+	confirmURL := *c.ServerURL
+	confirmURL.Path = path.Join(confirmURL.Path, "confirm", id)
+	http.Redirect(w, r, confirmURL.String(), 302)
 }
 
-func (c *Configuration) getAttributes(w http.ResponseWriter, r *http.Request) {
+func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
 	url_sessionid := chi.URLParam(r, "sessionid")
 
@@ -195,7 +175,7 @@ func (c *Configuration) getAttributes(w http.ResponseWriter, r *http.Request) {
 	}
 	if url_sessionid != sessionid {
 		w.WriteHeader(400)
-		log.Warn("Confirmation received from user for session that is not it's most current")
+		log.Warn("Confirmation received from user for session that is not its most recent")
 		return
 	}
 
@@ -207,13 +187,19 @@ func (c *Configuration) getAttributes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return attributes
-	_, err = w.Write([]byte(attributeJSON))
+	var attributes map[string]string
+	err = json.Unmarshal([]byte(attributeJSON), &attributes)
 	if err != nil {
-		// there is no good way to recover the http session here, so just log and exit
+		w.WriteHeader(500)
 		log.Error(err)
 		return
 	}
+
+	// And show the user the confirmation screen
+	err = c.Template.ExecuteTemplate(w, "confirm", map[string]interface{}{
+		"attributes": attributes,
+		"logoutPath": path.Join("/update", samlsession.logoutid),
+	})
 }
 
 func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
@@ -237,7 +223,7 @@ func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 	}
 	if url_sessionid != sessionid {
 		w.WriteHeader(400)
-		log.Warn("Confirmation received from user for session that is not it's most current")
+		log.Warn("Confirmation received from user for session that is not its most recent")
 		return
 	}
 
@@ -309,6 +295,8 @@ func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
 			log.Error("Logout failed: ", err)
 			// Note, this error shouldn't be propagated to remote
 		}
+
+		// TODO redirect to where?
 	} else if updateType == "user_active" {
 		err = c.SamlSessionManager.MarkActive(chi.URLParam(r, "logoutid"))
 		if err != nil {
@@ -363,7 +351,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(samlSP.RequireAccount)
 		r.Get("/session/{sessionid}", c.doLogin)
-		r.Get("/attributes/{sessionid}", c.getAttributes)
+		r.Get("/confirm/{sessionid}", c.getConfirm)
 		r.Post("/confirm/{sessionid}", c.doConfirm)
 	})
 

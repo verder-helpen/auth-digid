@@ -6,8 +6,10 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/url"
+	"path"
 
 	log "github.com/sirupsen/logrus"
 
@@ -26,16 +28,15 @@ type Configuration struct {
 	JwtSigningKey    *rsa.PrivateKey
 	JwtEncryptionKey *rsa.PublicKey
 
-	// Confirmation screen configuration
-	ConfirmationURL        *url.URL
-	ConfirmationSigningKey *rsa.PrivateKey
-
 	// BRP configuration
 	BRPServer string
 	Client    tls.Certificate
 	CaCerts   []byte
 
 	TestBSNMapping map[string]string
+
+	// Templates
+	Template *template.Template
 
 	// General server configuration
 	ServerURL          *url.URL
@@ -131,18 +132,11 @@ func ParseConfiguration() Configuration {
 		log.Fatal("Failed to parse jwt encryption key: ", err)
 	}
 
-	// Confirmation data
-	confirmationURL, err := url.Parse(viper.GetString("ConfirmationURL"))
+	// Read templates from templates directory
+	templatesDirectory := viper.GetString("TemplatesDirectory")
+	tmpl, err := template.New("").ParseFiles(path.Join(templatesDirectory, "confirm.html"))
 	if err != nil {
-		log.Fatal("Could not parse confirmation url: ", err)
-	}
-	confirmationPEM, err := ioutil.ReadFile(viper.GetString("ConfirmationKey"))
-	if err != nil {
-		log.Fatal("Failed to read confirmation jwt signing key: ", err)
-	}
-	confirmationKey, err := jwtkeys.ParseRSAPrivateKeyFromPEM(confirmationPEM)
-	if err != nil {
-		log.Fatal("Failed to parse confirmation jwt signing key: ", err)
+		log.Fatal("Error loading templates: ", err)
 	}
 
 	// General server data
@@ -171,12 +165,11 @@ func ParseConfiguration() Configuration {
 		JwtSigningKey:    jwtSigningKey,
 		JwtEncryptionKey: jwtEncryptionKey,
 
-		ConfirmationURL:        confirmationURL,
-		ConfirmationSigningKey: confirmationKey,
-
 		CaCerts:   caCerts,
 		BRPServer: viper.GetString("BRPServer"),
 		Client:    clientCert,
+
+		Template: tmpl,
 
 		ServerURL:          serverURL,
 		InternalURL:        internalURL,
