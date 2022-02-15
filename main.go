@@ -21,6 +21,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-co-op/gocron"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
 type StartRequest struct {
@@ -154,6 +155,18 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, confirmURL.String(), 302)
 }
 
+func localizeString(l *i18n.Localizer, id string, defaultValue string) string {
+	translation, err := l.Localize(&i18n.LocalizeConfig{
+		MessageID: id,
+	})
+
+	if err != nil {
+		return defaultValue
+	} else {
+		return translation
+	}
+}
+
 func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
 	url_sessionid := chi.URLParam(r, "sessionid")
@@ -195,10 +208,31 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loc := i18n.NewLocalizer(c.Bundle, r.Header.Get("Accept-Language"))
+
+	// translate the attribute keys to the appropriate language
+	var translatedAttributes map[string]string
+	for k, v := range attributes {
+		// if the translation for the attribute key is not available, use the key itself
+		translation := localizeString(loc, k, k)
+		translatedAttributes[translation] = v
+	}
+
+	titleText := localizeString(loc, "confirm_title", "Bevestig gegevens")
+	introText := localizeString(loc, "confirm_intro", "De volgende gegevens worden doorgegeven")
+	confirmText := localizeString(loc, "confirm", "Bevestigen")
+	logoutText := localizeString(loc, "logout", "Uitloggen")
+
 	// And show the user the confirmation screen
 	err = c.Template.ExecuteTemplate(w, "confirm", map[string]interface{}{
-		"attributes": attributes,
+		"attributes": translatedAttributes,
 		"logoutPath": path.Join("/update", samlsession.logoutid),
+		"messages": map[string]string{
+			"Title":   titleText,
+			"Intro":   introText,
+			"Confirm": confirmText,
+			"Logout":  logoutText,
+		},
 	})
 }
 
@@ -289,6 +323,15 @@ func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
 
 	updateType := r.FormValue("type")
 	if updateType == "logout" {
+		// get continuation URL before logging out
+		samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
+		redirectURL, err := url.Parse(samlsession.continuation)
+		if err != nil {
+			w.WriteHeader(500)
+			log.Error(err)
+			return
+		}
+
 		// Handle logout request
 		err = c.SamlSessionManager.Logout(chi.URLParam(r, "logoutid"))
 		if err != nil {
@@ -296,7 +339,8 @@ func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
 			// Note, this error shouldn't be propagated to remote
 		}
 
-		// TODO redirect to where?
+		// redirect to redirect URL without result
+		http.Redirect(w, r, redirectURL.String(), 302)
 	} else if updateType == "user_active" {
 		err = c.SamlSessionManager.MarkActive(chi.URLParam(r, "logoutid"))
 		if err != nil {
