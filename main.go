@@ -211,7 +211,7 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 	loc := i18n.NewLocalizer(c.Bundle, r.Header.Get("Accept-Language"))
 
 	// translate the attribute keys to the appropriate language
-	var translatedAttributes map[string]string
+	translatedAttributes := map[string]string{}
 	for k, v := range attributes {
 		// if the translation for the attribute key is not available, use the key itself
 		translation := localizeString(loc, k, k)

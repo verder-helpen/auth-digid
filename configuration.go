@@ -142,7 +142,7 @@ func ParseConfiguration() Configuration {
 		log.Fatal("Error loading templates: ", err)
 	}
 
-	viper.SetDefault("AvailableLanguages", []string{"nl", "en"})
+	viper.SetDefault("AvailableLanguages", []string{"nl"})
 	languages := viper.GetStringSlice("AvailableLanguages")
 	translationsDirectory := viper.GetString("TranslationsDirectory")
 
