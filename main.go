@@ -312,8 +312,57 @@ func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (c *Configuration) doLogout(w http.ResponseWriter, r *http.Request) {
+	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
+	url_sessionid := chi.URLParam(r, "sessionid")
+
+	// Get jwt and session id
+	sessionid, _, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	if err == samlsp.ErrNoSession {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+	if url_sessionid != sessionid {
+		w.WriteHeader(400)
+		log.Warn("Logout received from user for session that is not its most recent")
+		return
+	}
+
+	// get id contact session exists
+	session, err := c.SessionManager.GetSession(sessionid)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+
+	// get continuation URL before actually logging out
+	redirectURL, err := url.Parse(session.continuation)
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+
+	// Handle logout request
+	err = c.SamlSessionManager.Logout(samlsession.logoutid)
+	if err != nil {
+		log.Error("Logout failed: ", err)
+		// Note, this error shouldn't be propagated to remote
+	}
+
+	// redirect to redirect URL without result
+	http.Redirect(w, r, redirectURL.String(), 302)
+}
+
 // Handle update on session from communication plugin.
-func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
+func (c *Configuration) sessionUpdate(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Warn(err)
@@ -323,24 +372,12 @@ func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
 
 	updateType := r.FormValue("type")
 	if updateType == "logout" {
-		// get continuation URL before logging out
-		samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
-		redirectURL, err := url.Parse(samlsession.continuation)
-		if err != nil {
-			w.WriteHeader(500)
-			log.Error(err)
-			return
-		}
-
 		// Handle logout request
 		err = c.SamlSessionManager.Logout(chi.URLParam(r, "logoutid"))
 		if err != nil {
 			log.Error("Logout failed: ", err)
 			// Note, this error shouldn't be propagated to remote
 		}
-
-		// redirect to redirect URL without result
-		http.Redirect(w, r, redirectURL.String(), 302)
 	} else if updateType == "user_active" {
 		err = c.SamlSessionManager.MarkActive(chi.URLParam(r, "logoutid"))
 		if err != nil {
@@ -397,10 +434,11 @@ func (c *Configuration) BuildHandler() http.Handler {
 		r.Get("/session/{sessionid}", c.doLogin)
 		r.Get("/confirm/{sessionid}", c.getConfirm)
 		r.Post("/confirm/{sessionid}", c.doConfirm)
+		r.Post("/logout/{sessionid}", c.doLogout)
 	})
 
 	r.Post("/start_authentication", c.startSession)
-	r.Post("/update/{logoutid}", c.SessionUpdate)
+	r.Post("/update/{logoutid}", c.sessionUpdate)
 	r.Mount("/saml/", samlSP)
 
 	return r
