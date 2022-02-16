@@ -277,7 +277,7 @@ func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logoutUrl := *c.InternalURL
-	logoutUrl.Path = path.Join(logoutUrl.Path, "update", samlsession.logoutid)
+	logoutUrl.Path = path.Join(logoutUrl.Path, "logout", sessionid)
 	authToken, err := buildAttributeJWT(attributes, logoutUrl.String(), c.JwtSigningKey, c.JwtEncryptionKey)
 	if err != nil {
 		w.WriteHeader(500)
