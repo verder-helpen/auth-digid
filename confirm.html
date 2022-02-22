@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ .messages.Title }}</title>
+    <title>{{ translate .language "messages.title" }}</title>
     <style>
       body {
         font-family: Arial, Helvetica, sans-serif;
@@ -18,7 +18,7 @@
     </style>
   </head>
   <body>
-    <p>{{ .messages.Intro }}:</p>
+    <p>{{ translate .language "messages.intro" }}:</p>
     <section>
       <dl>
         {{ range $key, $value := .attributes }}
@@ -28,10 +28,10 @@
       </dl>
     </section>
     <form method="post">
-      <button type="submit">{{ .messages.Confirm }}</button>
+      <button type="submit">{{ translate .language "messages.confirm" }}</button>
     </form>
     <form action="{{ .logoutPath }}" method="post">
-      <button type="submit">{{ .messages.Logout }}</button>
+      <button type="submit">{{ translate .language "messages.logout" }}</button>
     </form>
   </body>
 </html>

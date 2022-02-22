@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -13,10 +12,8 @@ import (
 	"path"
 
 	jwtkeys "github.com/dgrijalva/jwt-go/v4"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"golang.org/x/text/language"
 )
 
 type Configuration struct {
@@ -39,7 +36,7 @@ type Configuration struct {
 
 	// Templates
 	Template *template.Template
-	Bundle   *i18n.Bundle
+	Bundle   *Translations
 
 	// General server configuration
 	ServerURL          *url.URL
@@ -136,23 +133,22 @@ func ParseConfiguration() Configuration {
 	}
 
 	// Read templates and translations from templates directory
-	templatesDirectory := viper.GetString("TemplatesDirectory")
-	tmpl, err := template.New("").ParseFiles(path.Join(templatesDirectory, "confirm.html"))
-	if err != nil {
-		log.Fatal("Error loading templates: ", err)
-	}
-
 	viper.SetDefault("AvailableLanguages", []string{"nl"})
 	languages := viper.GetStringSlice("AvailableLanguages")
 	translationsDirectory := viper.GetString("TranslationsDirectory")
 
-	bundle := i18n.NewBundle(language.Dutch) // default language is Dutch
-	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
+	bundle := NewTranslations()
 	for _, lang := range languages {
-		_, err = bundle.LoadMessageFile(path.Join(translationsDirectory, fmt.Sprintf("%v.json", lang)))
+		bundle.Load(lang, path.Join(translationsDirectory, fmt.Sprintf("%v.json", lang)))
 		if err != nil {
 			log.Fatal("Error loading messages: ", err)
 		}
+	}
+
+	templatesDirectory := viper.GetString("TemplatesDirectory")
+	tmpl, err := template.New("").Funcs(map[string]interface{}{"translate": bundle.Translate}).ParseFiles(path.Join(templatesDirectory, "confirm.html"))
+	if err != nil {
+		log.Fatal("Error loading templates: ", err)
 	}
 
 	// General server data
@@ -186,7 +182,7 @@ func ParseConfiguration() Configuration {
 		Client:    clientCert,
 
 		Template: tmpl,
-		Bundle:   bundle,
+		Bundle:   &bundle,
 
 		ServerURL:          serverURL,
 		InternalURL:        internalURL,

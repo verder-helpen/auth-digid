@@ -1,8 +1,12 @@
 {
-  "city": "Stad",
-  "fullname": "Naam",
-  "confirm": "Bevestigen",
-  "logout": "Uitloggen",
-  "confirm_title": "Bevestig gegevens",
-  "confirm_intro": "De volgende gegevens worden doorgegeven aan het service center"
+  "attributes": {
+    "city": "Stad",
+    "fullname": "Naam"
+  },
+  "messages": {
+    "confirm": "Bevestigen",
+    "logout": "Uitloggen",
+    "confirm_title": "Bevestig gegevens",
+    "confirm_intro": "De volgende gegevens worden doorgegeven aan het service center"
+  }
 }

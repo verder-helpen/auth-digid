@@ -1,8 +1,12 @@
 {
-  "city": "City",
-  "fullname": "Name",
-  "confirm": "Confirm",
-  "logout": "Logout",
-  "confirm_title": "Confirm details",
-  "confirm_intro": "The following details will be shown to the service center"
+  "attributes": {
+    "city": "City",
+    "fullname": "Name"
+  },
+  "messages": {
+    "confirm": "Confirm",
+    "logout": "Logout",
+    "confirm_title": "Confirm details",
+    "confirm_intro": "The following details will be shown to the service center"
+  }
 }
