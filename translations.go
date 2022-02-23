@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type Translations struct {
@@ -20,26 +20,33 @@ func NewTranslations() Translations {
 	}
 }
 
-func (t *Translations) Load(language string, filename string) {
+func (t *Translations) Load(language string, filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatal("Cannot open {}", filename)
+		return fmt.Errorf("Cannot open %s", filename)
 	}
 	defer file.Close()
 
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Fatal("Cannot read {}", filename)
+		return fmt.Errorf("Cannot read %s", filename)
 	}
 
 	var lang_map map[string]interface{}
 	json.Unmarshal(bytes, &lang_map)
 
 	t.data[language] = lang_map
+	return nil
 }
 
-func (t *Translations) SetFallback(language string) {
-	t.fallback = language
+func (t *Translations) SetFallback(language string) error {
+	if _, ok := t.data[language]; ok {
+		t.fallback = language
+		return nil
+	}
+
+	// if language not in data, we cannot use it as a fallback
+	return fmt.Errorf("Language %s not in loaded languages", language)
 }
 
 func internalLookupKeyInNestedMap(id string, data interface{}) (string, bool) {
@@ -59,9 +66,9 @@ func internalLookupKeyInNestedMap(id string, data interface{}) (string, bool) {
 
 	if output, ok := data.(string); ok {
 		return output, true
-	} else {
-		return "", false
 	}
+
+	return "", false
 }
 
 func (t *Translations) Translate(language string, id string) string {
@@ -83,4 +90,20 @@ func (t *Translations) Translate(language string, id string) string {
 
 	// if not found, return id
 	return id
+}
+
+func (t *Translations) ParseAcceptLanguage(acceptLanguageHeader string) string {
+	// regexp to match language in accept language ignoring weights
+	re := regexp.MustCompile(`([\w-*]+)\s*(?:;\s*q\s*=\s*[0-9.]+)?`)
+	match := re.FindAllStringSubmatch(acceptLanguageHeader, -1)
+
+	for _, group := range match {
+		if _, ok := t.data[group[1]]; ok {
+			// if language in data, return it
+			return group[1]
+		}
+	}
+
+	// if language is not available, use default
+	return t.fallback
 }

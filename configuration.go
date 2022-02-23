@@ -133,16 +133,23 @@ func ParseConfiguration() Configuration {
 	}
 
 	// Read templates and translations from templates directory
+	viper.SetDefault("DefaultLanguage", "nl")
+	defaultLanguage := viper.GetString("DefaultLanguage")
+
 	viper.SetDefault("AvailableLanguages", []string{"nl"})
 	languages := viper.GetStringSlice("AvailableLanguages")
 	translationsDirectory := viper.GetString("TranslationsDirectory")
 
 	bundle := NewTranslations()
 	for _, lang := range languages {
-		bundle.Load(lang, path.Join(translationsDirectory, fmt.Sprintf("%v.json", lang)))
+		err = bundle.Load(lang, path.Join(translationsDirectory, fmt.Sprintf("%v.json", lang)))
 		if err != nil {
 			log.Fatal("Error loading messages: ", err)
 		}
+	}
+	err = bundle.SetFallback(defaultLanguage)
+	if err != nil {
+		log.Fatal("Error setting default language: ", err)
 	}
 
 	templatesDirectory := viper.GetString("TemplatesDirectory")

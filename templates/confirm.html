@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ translate .language "messages.title" }}</title>
+    <title>{{ translate .language "messages.confirm_title" }}</title>
     <style>
       body {
         font-family: Arial, Helvetica, sans-serif;
@@ -18,7 +18,7 @@
     </style>
   </head>
   <body>
-    <p>{{ translate .language "messages.intro" }}:</p>
+    <p>{{ translate .language "messages.confirm_intro" }}:</p>
     <section>
       <dl>
         {{ range $key, $value := .attributes }}

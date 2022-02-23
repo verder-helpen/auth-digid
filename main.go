@@ -195,20 +195,20 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// DETERMINE LANGUAGE HERE
-	lang := "nl"
+	lang := c.Bundle.ParseAcceptLanguage(r.Header.Get("Accept-Language"))
 
 	// translate the attribute keys to the appropriate language
 	translatedAttributes := map[string]string{}
 	for k, v := range attributes {
 		// if the translation for the attribute key is not available, use the key itself
-		translation := c.Bundle.Translate(lang, k)
+		translation := c.Bundle.Translate(lang, "attributes."+k)
 		translatedAttributes[translation] = v
 	}
 
 	// And show the user the confirmation screen
-	err = c.Template.ExecuteTemplate(w, "confirm", map[string]interface{}{
+	c.Template.ExecuteTemplate(w, "confirm", map[string]interface{}{
 		"attributes": translatedAttributes,
+		"language":   lang,
 		"logoutPath": path.Join("/update", samlsession.logoutid),
 	})
 }
