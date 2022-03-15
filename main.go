@@ -158,9 +158,6 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
 	url_sessionid := chi.URLParam(r, "sessionid")
 
-	// this is activity on the session, so mark it
-	c.SamlSessionManager.MarkActive(samlsession.logoutid)
-
 	// Get jwt and session id
 	sessionid, attributeJSON, err := c.SamlSessionManager.GetIDContactSession(samlsession)
 	if err == samlsp.ErrNoSession {
@@ -216,9 +213,6 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
 	url_sessionid := chi.URLParam(r, "sessionid")
-
-	// this is activity on the session, so mark it
-	c.SamlSessionManager.MarkActive(samlsession.logoutid)
 
 	// Get jwt and session id
 	sessionid, attributesJSON, err := c.SamlSessionManager.GetIDContactSession(samlsession)
