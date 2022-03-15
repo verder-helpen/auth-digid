@@ -94,7 +94,7 @@ func (s *SamlSessionEncoder) New(assertion *saml.Assertion) (samlsp.Session, err
 		return nil, err
 	}
 
-	_, err = s.db.Exec("INSERT INTO saml_session (sessionid, attributes, expiry) VALUES ($1, $2, $3, NOW() + ($4 * Interval '1 minute'))", id, string(encodedAttributes), s.timeout)
+	_, err = s.db.Exec("INSERT INTO saml_session (sessionid, attributes, expiry) VALUES ($1, $2, NOW() + ($3 * Interval '1 minute'))", id, string(encodedAttributes), s.timeout)
 	if err != nil {
 		log.Error(err)
 		return nil, err

@@ -256,6 +256,13 @@ func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log out session before redirecting
+	err = c.SamlSessionManager.Logout(samlsession.id)
+	if err != nil {
+		log.Error("Logout failed: ", err)
+		// Note, this error shouldn't be propagated to remote
+	}
+
 	// And deliver it appropriately
 	if session.attributeURL != nil {
 		response, err := http.Post(*session.attributeURL, "application/jwt", bytes.NewReader([]byte(authToken)))
@@ -322,7 +329,7 @@ func (c *Configuration) doLogout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle logout request
-	err = c.SamlSessionManager.Logout(samlsession.logoutid)
+	err = c.SamlSessionManager.Logout(samlsession.id)
 	if err != nil {
 		log.Error("Logout failed: ", err)
 		// Note, this error shouldn't be propagated to remote
