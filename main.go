@@ -209,7 +209,7 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 	c.Template.ExecuteTemplate(w, "confirm", map[string]interface{}{
 		"attributes": translatedAttributes,
 		"language":   lang,
-		"logoutPath": path.Join("/update", samlsession.logoutid),
+		"logoutPath": path.Join("/logout", sessionid),
 	})
 }
 
@@ -338,36 +338,6 @@ func (c *Configuration) doLogout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, redirectURL.String(), 302)
 }
 
-// Handle update on session from communication plugin.
-func (c *Configuration) sessionUpdate(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		log.Warn(err)
-		w.WriteHeader(400)
-		return
-	}
-
-	updateType := r.FormValue("type")
-	if updateType == "logout" {
-		// Handle logout request
-		err = c.SamlSessionManager.Logout(chi.URLParam(r, "logoutid"))
-		if err != nil {
-			log.Error("Logout failed: ", err)
-			// Note, this error shouldn't be propagated to remote
-		}
-	} else if updateType == "user_active" {
-		err = c.SamlSessionManager.MarkActive(chi.URLParam(r, "logoutid"))
-		if err != nil {
-			log.Error("Activity marking failed: ", err)
-			// Note, this error shouldn't be propagated to remote
-		}
-	} else {
-		log.Warn("Unrecognized update type ", updateType)
-	}
-
-	w.WriteHeader(204)
-}
-
 func (c *Configuration) BuildHandler() http.Handler {
 	// Setup SAML plugin
 	idpMetadata, err := samlsp.FetchMetadata(context.Background(), http.DefaultClient,
@@ -415,7 +385,6 @@ func (c *Configuration) BuildHandler() http.Handler {
 	})
 
 	r.Post("/start_authentication", c.startSession)
-	r.Post("/update/{logoutid}", c.sessionUpdate)
 	r.Mount("/saml/", samlSP)
 
 	return r
