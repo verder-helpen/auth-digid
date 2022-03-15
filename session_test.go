@@ -281,7 +281,7 @@ func TestSamlSessions(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, testSession3, testSession6)
 
-	err = SamlSessionManager.Logout(testSession1t.logoutid)
+	err = SamlSessionManager.Logout(testSession1t.id)
 	require.NoError(t, err)
 
 	_, err = SamlSessionManager.Decode(testSession1t.id)
@@ -356,14 +356,6 @@ func TestSamlSessionTimeout(t *testing.T) {
 	testSession3, err := SamlSessionManager.Decode(testSession1t.id)
 	assert.NoError(t, err)
 	assert.Equal(t, testSession1, testSession3)
-
-	err = SamlSessionManager.MarkActive(testSession1t.logoutid)
-	assert.NoError(t, err)
-
-	time.Sleep(time.Second * 35)
-	testSession4, err := SamlSessionManager.Decode(testSession1t.id)
-	assert.NoError(t, err)
-	assert.Equal(t, testSession1, testSession4)
 
 	time.Sleep(time.Second * 30)
 	_, err = SamlSessionManager.Decode(testSession1t.id)
