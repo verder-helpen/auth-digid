@@ -66,5 +66,5 @@ TQIDAQAB
 		stdin.Write([]byte(jwt))
 	}()
 	output, err := testJwtCommand.CombinedOutput()
-	assert.Equal(t, "AuthResult { status: Succes, attributes: Some({\"a\": \"b\"}), session_url: Some(\"https://example.com\") }\n", string(output))
+	assert.Equal(t, "AuthResult { status: Success, attributes: Some({\"a\": \"b\"}), session_url: Some(\"https://example.com\") }\n", string(output))
 }

@@ -8,4 +8,4 @@ edition = "2018"
 
 [dependencies]
 id-contact-jwt = { git = "https://github.com/id-contact/id-contact-jwt.git" }
-josekit = "0.7.1"
+josekit = "0.8.0"
