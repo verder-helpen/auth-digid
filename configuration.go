@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"path"
 
-	jwtkeys "github.com/dgrijalva/jwt-go/v4"
+	jwtkeys "github.com/golang-jwt/jwt/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )

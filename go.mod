@@ -4,10 +4,10 @@ go 1.17
 
 require (
 	github.com/crewjam/saml v0.4.6
-	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-co-op/gocron v1.13.0
+	github.com/golang-jwt/jwt/v4 v4.4.0
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/lestrrat-go/jwx v1.2.20
 	github.com/sirupsen/logrus v1.8.1
