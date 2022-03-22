@@ -6,12 +6,13 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/url"
-
-	log "github.com/sirupsen/logrus"
+	"path"
 
 	jwtkeys "github.com/dgrijalva/jwt-go/v4"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -32,6 +33,10 @@ type Configuration struct {
 	CaCerts   []byte
 
 	TestBSNMapping map[string]string
+
+	// Templates
+	Template *template.Template
+	Bundle   *Translations
 
 	// General server configuration
 	ServerURL          *url.URL
@@ -123,6 +128,35 @@ func ParseConfiguration() Configuration {
 		log.Fatal("Failed to read jwt encryption key: ", err)
 	}
 	jwtEncryptionKey, err := jwtkeys.ParseRSAPublicKeyFromPEM(jwtEncryptionKeyPEM)
+	if err != nil {
+		log.Fatal("Failed to parse jwt encryption key: ", err)
+	}
+
+	// Read templates and translations from templates directory
+	viper.SetDefault("DefaultLanguage", "nl")
+	defaultLanguage := viper.GetString("DefaultLanguage")
+
+	viper.SetDefault("AvailableLanguages", []string{"nl"})
+	languages := viper.GetStringSlice("AvailableLanguages")
+	translationsDirectory := viper.GetString("TranslationsDirectory")
+
+	bundle := NewTranslations()
+	for _, lang := range languages {
+		err = bundle.Load(lang, path.Join(translationsDirectory, fmt.Sprintf("%v.json", lang)))
+		if err != nil {
+			log.Fatal("Error loading messages: ", err)
+		}
+	}
+	err = bundle.SetFallback(defaultLanguage)
+	if err != nil {
+		log.Fatal("Error setting default language: ", err)
+	}
+
+	templatesDirectory := viper.GetString("TemplatesDirectory")
+	tmpl, err := template.New("").Funcs(map[string]interface{}{"translate": bundle.Translate}).ParseFiles(path.Join(templatesDirectory, "confirm.html"))
+	if err != nil {
+		log.Fatal("Error loading templates: ", err)
+	}
 
 	// General server data
 	rawServerURL := viper.GetString("ServerURL")
@@ -153,6 +187,9 @@ func ParseConfiguration() Configuration {
 		CaCerts:   caCerts,
 		BRPServer: viper.GetString("BRPServer"),
 		Client:    clientCert,
+
+		Template: tmpl,
+		Bundle:   &bundle,
 
 		ServerURL:          serverURL,
 		InternalURL:        internalURL,

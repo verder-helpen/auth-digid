@@ -133,19 +133,139 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Construct authentication result JWT
-	logoutUrl := *c.InternalURL
-	logoutUrl.Path = path.Join(logoutUrl.Path, "update", samlsession.logoutid)
-	authToken, err := buildAttributeJWT(attributeResult, logoutUrl.String(), c.JwtSigningKey, c.JwtEncryptionKey)
+	// Encode attributes
+	attributesJSON, err := json.Marshal(attributeResult)
 	if err != nil {
 		w.WriteHeader(500)
 		log.Error(err)
 		return
 	}
 
+	// Store the information needed for confirmation
+	err = c.SamlSessionManager.SetIDContactSession(samlsession, id, string(attributesJSON))
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+
+	confirmURL := *c.ServerURL
+	confirmURL.Path = path.Join(confirmURL.Path, "confirm", id)
+	http.Redirect(w, r, confirmURL.String(), 302)
+}
+
+func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
+	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
+	url_sessionid := chi.URLParam(r, "sessionid")
+
+	// Get jwt and session id
+	sessionid, attributeJSON, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	if err == samlsp.ErrNoSession {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+	if url_sessionid != sessionid {
+		w.WriteHeader(400)
+		log.Warn("Confirmation received from user for session that is not its most recent")
+		return
+	}
+
+	// check id contact session exists
+	_, err = c.SessionManager.GetSession(sessionid)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+
+	var attributes map[string]string
+	err = json.Unmarshal([]byte(attributeJSON), &attributes)
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+
+	lang := c.Bundle.ParseAcceptLanguage(r.Header.Get("Accept-Language"))
+
+	// translate the attribute keys to the appropriate language
+	translatedAttributes := map[string]string{}
+	for k, v := range attributes {
+		// if the translation for the attribute key is not available, use the key itself
+		translation := c.Bundle.Translate(lang, "attributes."+k)
+		translatedAttributes[translation] = v
+	}
+
+	// And show the user the confirmation screen
+	c.Template.ExecuteTemplate(w, "confirm", map[string]interface{}{
+		"attributes": translatedAttributes,
+		"language":   lang,
+		"logoutPath": path.Join("/logout", sessionid),
+	})
+}
+
+func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
+	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
+	url_sessionid := chi.URLParam(r, "sessionid")
+
+	// Get jwt and session id
+	sessionid, attributesJSON, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	if err == samlsp.ErrNoSession {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+	if url_sessionid != sessionid {
+		w.WriteHeader(400)
+		log.Warn("Confirmation received from user for session that is not its most recent")
+		return
+	}
+
+	session, err := c.SessionManager.GetSession(sessionid)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+
+	// Construct authentication result JWT
+	var attributes map[string]string
+	err = json.Unmarshal([]byte(attributesJSON), &attributes)
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+	logoutUrl := *c.InternalURL
+	logoutUrl.Path = path.Join(logoutUrl.Path, "logout", sessionid)
+	authToken, err := buildAttributeJWT(attributes, logoutUrl.String(), c.JwtSigningKey, c.JwtEncryptionKey)
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+
+	// Log out session before redirecting
+	err = c.SamlSessionManager.Logout(samlsession.id)
+	if err != nil {
+		log.Error("Logout failed: ", err)
+		// Note, this error shouldn't be propagated to remote
+	}
+
 	// And deliver it appropriately
 	if session.attributeURL != nil {
-		response, err := http.Post(*session.attributeURL, "application/jwt", bytes.NewReader(authToken))
+		response, err := http.Post(*session.attributeURL, "application/jwt", bytes.NewReader([]byte(authToken)))
 		if err != nil {
 			// Just log
 			log.Error(err)
@@ -163,39 +283,60 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 			log.Error(err)
 			return
 		}
-		redirectURL.Query().Set("result", string(authToken))
+		redirectQuery := redirectURL.Query()
+		redirectQuery.Set("result", string(authToken))
+		redirectURL.RawQuery = redirectQuery.Encode()
 		http.Redirect(w, r, redirectURL.String(), 302)
 	}
 }
 
-// Handle update on session from communication plugin.
-func (c *Configuration) SessionUpdate(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		log.Warn(err)
+func (c *Configuration) doLogout(w http.ResponseWriter, r *http.Request) {
+	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
+	url_sessionid := chi.URLParam(r, "sessionid")
+
+	// Get jwt and session id
+	sessionid, _, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	if err == samlsp.ErrNoSession {
 		w.WriteHeader(400)
+		log.Warn(err)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+	if url_sessionid != sessionid {
+		w.WriteHeader(400)
+		log.Warn("Logout received from user for session that is not its most recent")
 		return
 	}
 
-	updateType := r.FormValue("type")
-	if updateType == "logout" {
-		// Handle logout request
-		err = c.SamlSessionManager.Logout(chi.URLParam(r, "logoutid"))
-		if err != nil {
-			log.Error("Logout failed: ", err)
-			// Note, this error shouldn't be propagated to remote
-		}
-	} else if updateType == "user_active" {
-		err = c.SamlSessionManager.MarkActive(chi.URLParam(r, "logoutid"))
-		if err != nil {
-			log.Error("Activity marking failed: ", err)
-			// Note, this error shouldn't be propagated to remote
-		}
-	} else {
-		log.Warn("Unrecognized update type ", updateType)
+	// get id contact session exists
+	session, err := c.SessionManager.GetSession(sessionid)
+	if err != nil {
+		w.WriteHeader(400)
+		log.Warn(err)
+		return
 	}
 
-	w.WriteHeader(204)
+	// get continuation URL before actually logging out
+	redirectURL, err := url.Parse(session.continuation)
+	if err != nil {
+		w.WriteHeader(500)
+		log.Error(err)
+		return
+	}
+
+	// Handle logout request
+	err = c.SamlSessionManager.Logout(samlsession.id)
+	if err != nil {
+		log.Error("Logout failed: ", err)
+		// Note, this error shouldn't be propagated to remote
+	}
+
+	// redirect to redirect URL without result
+	http.Redirect(w, r, redirectURL.String(), 302)
 }
 
 func (c *Configuration) BuildHandler() http.Handler {
@@ -239,10 +380,12 @@ func (c *Configuration) BuildHandler() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(samlSP.RequireAccount)
 		r.Get("/session/{sessionid}", c.doLogin)
+		r.Get("/confirm/{sessionid}", c.getConfirm)
+		r.Post("/confirm/{sessionid}", c.doConfirm)
+		r.Post("/logout/{sessionid}", c.doLogout)
 	})
 
 	r.Post("/start_authentication", c.startSession)
-	r.Post("/update/{logoutid}", c.SessionUpdate)
 	r.Mount("/saml/", samlSP)
 
 	return r

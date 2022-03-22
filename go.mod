@@ -13,6 +13,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/text v0.3.7 // indirect
 )
 
 replace github.com/crewjam/saml => github.com/id-contact/saml v0.4.6-0.20210715085542-1ef6a54949db
