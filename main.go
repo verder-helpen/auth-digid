@@ -34,6 +34,16 @@ type StartResponse struct {
 	ClientURL string `json:"client_url"`
 }
 
+func HandleDigidCancelError(w http.ResponseWriter, r *http.Request, err error) {
+	if _, ok := err.(*saml.InvalidResponseError); ok {
+		log.Printf("WARNING: received cancel saml response")
+		http.Redirect(w, r, "https://widget.verderhelpen.tweede.golf/auth-select/digid/token123?m=cancel", 302)
+	} else {
+		log.Printf("ERROR: %s", err)
+		http.Redirect(w, r, "https://widget.verderhelpen.tweede.golf/auth-select/digid/token123?m=error", 302)
+	}
+}
+
 // Start ID Contact authentication session
 func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Starting session")
@@ -375,6 +385,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 		Secure:   c.ServerURL.Scheme == "https",
 		MaxAge:   60 * time.Minute,
 		Codec:    c.SamlSessionManager,
+		OnError:  HandleDigidCancelError,
 	}
 
 	// Construct router
