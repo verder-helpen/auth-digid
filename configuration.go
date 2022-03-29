@@ -41,6 +41,7 @@ type Configuration struct {
 	// General server configuration
 	ServerURL          *url.URL
 	InternalURL        *url.URL
+	WidgetURL          *url.URL
 	SamlSessionManager *SamlSessionEncoder
 	SessionManager     *IDContactSessionManager
 	DatabaseConnection string
@@ -169,6 +170,11 @@ func ParseConfiguration() Configuration {
 	if err != nil {
 		log.Fatal("Invalid internal url: ", err)
 	}
+	rawWidgetURL := viper.GetString("WidgetURL")
+	widgetURL, err := url.Parse(rawWidgetURL)
+	if err != nil {
+		log.Fatal("Invalid widget url: ", err)
+	}
 	databaseConnection := viper.GetString("DatabaseConnection")
 	db, err := sql.Open("pgx", databaseConnection)
 	if err != nil {
@@ -193,6 +199,7 @@ func ParseConfiguration() Configuration {
 
 		ServerURL:          serverURL,
 		InternalURL:        internalURL,
+		WidgetURL:          widgetURL,
 		DatabaseConnection: databaseConnection,
 		SamlSessionManager: &SamlSessionEncoder{
 			db:      db,

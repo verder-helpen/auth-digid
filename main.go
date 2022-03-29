@@ -34,13 +34,17 @@ type StartResponse struct {
 	ClientURL string `json:"client_url"`
 }
 
-func HandleDigidCancelError(w http.ResponseWriter, r *http.Request, err error) {
+func (c *Configuration) handleDigidCancelError(w http.ResponseWriter, r *http.Request, err error) {
 	if _, ok := err.(*saml.InvalidResponseError); ok {
 		log.Printf("WARNING: received cancel saml response")
-		http.Redirect(w, r, "https://widget.verderhelpen.tweede.golf/auth-select/digid/token123?m=cancel", 302)
+		returnURL := *c.WidgetURL
+		returnURL.Path = path.Join(returnURL.Path, "?notification=cancel")
+		http.Redirect(w, r, returnURL.String(), 302)
 	} else {
 		log.Printf("ERROR: %s", err)
-		http.Redirect(w, r, "https://widget.verderhelpen.tweede.golf/auth-select/digid/token123?m=error", 302)
+		returnURL := *c.WidgetURL
+		returnURL.Path = path.Join(returnURL.Path, "?notification=error")
+		http.Redirect(w, r, returnURL.String(), 302)
 	}
 }
 
@@ -385,8 +389,8 @@ func (c *Configuration) BuildHandler() http.Handler {
 		Secure:   c.ServerURL.Scheme == "https",
 		MaxAge:   60 * time.Minute,
 		Codec:    c.SamlSessionManager,
-		OnError:  HandleDigidCancelError,
 	}
+	samlSP.OnError = c.handleDigidCancelError
 
 	// Construct router
 	r := chi.NewRouter()
