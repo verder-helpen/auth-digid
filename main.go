@@ -38,12 +38,16 @@ func (c *Configuration) handleDigidCancelError(w http.ResponseWriter, r *http.Re
 	if _, ok := err.(*saml.InvalidResponseError); ok {
 		log.Printf("WARNING: received cancel saml response")
 		returnURL := *c.WidgetURL
-		returnURL.Path = path.Join(returnURL.Path, "?notification=cancel")
+		returnQuery := returnURL.Query()
+		returnQuery.Set("notification", "cancel")
+		returnURL.RawQuery = returnQuery.Encode()
 		http.Redirect(w, r, returnURL.String(), 302)
 	} else {
 		log.Printf("ERROR: %s", err)
 		returnURL := *c.WidgetURL
-		returnURL.Path = path.Join(returnURL.Path, "?notification=error")
+		returnQuery := returnURL.Query()
+		returnQuery.Set("notification", "error")
+		returnURL.RawQuery = returnQuery.Encode()
 		http.Redirect(w, r, returnURL.String(), 302)
 	}
 }
