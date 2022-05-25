@@ -8,8 +8,8 @@
   "TemplatesDirectory": "./templates",
   "TranslationsDirectory": "./locale",
   "AvailableLanguages": ["nl", "en"],
-  "ServerURL": "https://auth-digid.idcontact.test.tweede.golf",
-  "WidgetURL": "https://widget.idcontact.test.tweede.golf",
+  "ServerURL": "https://auth-digid.verderhelpen.test.tweede.golf",
+  "WidgetURL": "https://widget.verderhelpen.test.tweede.golf",
   "JWTSigningKey": "signkey.pem",
   "JWTEncryptionKey": "encryptionkey.pem",
   "AttributeMapping": {

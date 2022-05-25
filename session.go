@@ -141,8 +141,8 @@ func (s *SamlSessionEncoder) Decode(id string) (samlsp.Session, error) {
 	}, nil
 }
 
-func (s *SamlSessionEncoder) SetIDContactSession(session *SamlSession, id_contact_session string, session_attributes string) error {
-	result, err := s.db.Exec("UPDATE saml_session SET idcontact_session_id = (SELECT id FROM idcontact_session WHERE sessionid=$2), session_attributes = $3 WHERE sessionid = $1", session.id, id_contact_session, session_attributes)
+func (s *SamlSessionEncoder) SetVerderHelpenSession(session *SamlSession, verder_helpen_session string, session_attributes string) error {
+	result, err := s.db.Exec("UPDATE saml_session SET verderhelpen_session_id = (SELECT id FROM verderhelpen_session WHERE sessionid=$2), session_attributes = $3 WHERE sessionid = $1", session.id, verder_helpen_session, session_attributes)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -158,8 +158,8 @@ func (s *SamlSessionEncoder) SetIDContactSession(session *SamlSession, id_contac
 	return nil
 }
 
-func (s *SamlSessionEncoder) GetIDContactSession(session *SamlSession) (string, string, error) {
-	rows, err := s.db.Query("SELECT idcontact_session.sessionid, session_attributes FROM saml_session INNER JOIN idcontact_session ON saml_session.idcontact_session_id = idcontact_session.id")
+func (s *SamlSessionEncoder) GetVerderHelpenSession(session *SamlSession) (string, string, error) {
+	rows, err := s.db.Query("SELECT verderhelpen_session.sessionid, session_attributes FROM saml_session INNER JOIN verderhelpen_session ON saml_session.verderhelpen_session_id = verderhelpen_session.id")
 	if err != nil {
 		log.Error(err)
 		return "", "", err
@@ -206,26 +206,26 @@ func (s *SamlSession) GetAttributes() samlsp.Attributes {
 	return s.attributes
 }
 
-type IDContactSessionManager struct {
+type VerderHelpenSessionManager struct {
 	db      *sql.DB
 	timeout int // session timeout in minutes
 }
 
-type IDContactSession struct {
+type VerderHelpenSession struct {
 	id           string
 	attributes   string
 	continuation string
 	attributeURL *string
 }
 
-func (m *IDContactSessionManager) NewSession(attributes, continuation string, attributeURL *string) (*IDContactSession, error) {
+func (m *VerderHelpenSessionManager) NewSession(attributes, continuation string, attributeURL *string) (*VerderHelpenSession, error) {
 	id := GenerateID()
-	_, err := m.db.Exec("INSERT INTO idcontact_session (sessionid, attributes, continuation, attr_url, expiry) VALUES ($1, $2, $3, $4, NOW() + ($5 * Interval '1 minute'))", id, attributes, continuation, attributeURL, m.timeout)
+	_, err := m.db.Exec("INSERT INTO verderhelpen_session (sessionid, attributes, continuation, attr_url, expiry) VALUES ($1, $2, $3, $4, NOW() + ($5 * Interval '1 minute'))", id, attributes, continuation, attributeURL, m.timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	return &IDContactSession{
+	return &VerderHelpenSession{
 		id:           id,
 		attributes:   attributes,
 		continuation: continuation,
@@ -233,8 +233,8 @@ func (m *IDContactSessionManager) NewSession(attributes, continuation string, at
 	}, nil
 }
 
-func (m *IDContactSessionManager) GetSession(id string) (*IDContactSession, error) {
-	rows, err := m.db.Query("SELECT attributes, continuation, attr_url FROM idcontact_session WHERE sessionid = $1 AND expiry > NOW()", id)
+func (m *VerderHelpenSessionManager) GetSession(id string) (*VerderHelpenSession, error) {
+	rows, err := m.db.Query("SELECT attributes, continuation, attr_url FROM verderhelpen_session WHERE sessionid = $1 AND expiry > NOW()", id)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func (m *IDContactSessionManager) GetSession(id string) (*IDContactSession, erro
 		return nil, err
 	}
 
-	return &IDContactSession{
+	return &VerderHelpenSession{
 		id:           id,
 		attributes:   attributes,
 		continuation: continuation,
@@ -259,7 +259,7 @@ func (m *IDContactSessionManager) GetSession(id string) (*IDContactSession, erro
 	}, nil
 }
 
-func (m *IDContactSessionManager) Cleanup() error {
-	_, err := m.db.Exec("DELETE FROM idcontact_session WHERE expiry < NOW() - Interval '1 minute'")
+func (m *VerderHelpenSessionManager) Cleanup() error {
+	_, err := m.db.Exec("DELETE FROM verderhelpen_session WHERE expiry < NOW() - Interval '1 minute'")
 	return err
 }

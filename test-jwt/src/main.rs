@@ -47,6 +47,6 @@ Bs6neR/sZuHzNm8y/xtxj2ZAEw==
 
     let jwt = io::stdin().lock().lines().next().unwrap().unwrap();
 
-    let result = id_contact_jwt::decrypt_and_verify_auth_result(&jwt, &sig_pubkey, &enc_privkey).unwrap();
+    let result = verder_helpen_jwt::decrypt_and_verify_auth_result(&jwt, &sig_pubkey, &enc_privkey).unwrap();
     println!("{:?}", result);
 }

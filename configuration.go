@@ -43,7 +43,7 @@ type Configuration struct {
 	InternalURL        *url.URL
 	WidgetURL          *url.URL
 	SamlSessionManager *SamlSessionEncoder
-	SessionManager     *IDContactSessionManager
+	SessionManager     *VerderHelpenSessionManager
 	DatabaseConnection string
 	SentryDSN          string
 	AttributeMapping   map[string]string
@@ -205,9 +205,9 @@ func ParseConfiguration() Configuration {
 			db:      db,
 			timeout: viper.GetInt("SamlSessionTimeout"),
 		},
-		SessionManager: &IDContactSessionManager{
+		SessionManager: &VerderHelpenSessionManager{
 			db:      db,
-			timeout: viper.GetInt("IDContactTimeout"),
+			timeout: viper.GetInt("VerderHelpenTimeout"),
 		},
 		SentryDSN:        viper.GetString("SentryDSN"),
 		AttributeMapping: viper.GetStringMapString("AttributeMapping"),

@@ -52,7 +52,7 @@ func (c *Configuration) handleDigidCancelError(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// Start ID Contact authentication session
+// Start Verder Helpen authentication session
 func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Starting session")
 	// Extract request
@@ -109,7 +109,7 @@ type AuthResult struct {
 
 // Handle an actual end-user login
 func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
-	// Fetch corresponding ID Contact session
+	// Fetch corresponding Verder Helpen session
 	id := chi.URLParam(r, "sessionid")
 	session, err := c.SessionManager.GetSession(id)
 	if err != nil {
@@ -161,7 +161,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store the information needed for confirmation
-	err = c.SamlSessionManager.SetIDContactSession(samlsession, id, string(attributesJSON))
+	err = c.SamlSessionManager.SetVerderHelpenSession(samlsession, id, string(attributesJSON))
 	if err != nil {
 		w.WriteHeader(500)
 		log.Error(err)
@@ -178,7 +178,7 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 	url_sessionid := chi.URLParam(r, "sessionid")
 
 	// Get jwt and session id
-	sessionid, attributeJSON, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	sessionid, attributeJSON, err := c.SamlSessionManager.GetVerderHelpenSession(samlsession)
 	if err == samlsp.ErrNoSession {
 		w.WriteHeader(400)
 		log.Warn(err)
@@ -195,7 +195,7 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check id contact session exists
+	// check Verder Helpen session exists
 	_, err = c.SessionManager.GetSession(sessionid)
 	if err != nil {
 		w.WriteHeader(400)
@@ -234,7 +234,7 @@ func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 	url_sessionid := chi.URLParam(r, "sessionid")
 
 	// Get jwt and session id
-	sessionid, attributesJSON, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	sessionid, attributesJSON, err := c.SamlSessionManager.GetVerderHelpenSession(samlsession)
 	if err == samlsp.ErrNoSession {
 		w.WriteHeader(400)
 		log.Warn(err)
@@ -314,7 +314,7 @@ func (c *Configuration) doLogout(w http.ResponseWriter, r *http.Request) {
 	url_sessionid := chi.URLParam(r, "sessionid")
 
 	// Get jwt and session id
-	sessionid, _, err := c.SamlSessionManager.GetIDContactSession(samlsession)
+	sessionid, _, err := c.SamlSessionManager.GetVerderHelpenSession(samlsession)
 	if err == samlsp.ErrNoSession {
 		w.WriteHeader(400)
 		log.Warn(err)
@@ -331,7 +331,7 @@ func (c *Configuration) doLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get id contact session exists
+	// get Verder Helpen session exists
 	session, err := c.SessionManager.GetSession(sessionid)
 	if err != nil {
 		w.WriteHeader(400)

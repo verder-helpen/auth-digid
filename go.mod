@@ -1,4 +1,4 @@
-module github.com/id-contact/auth-digid
+module github.com/verder-helpen/auth-digid
 
 go 1.17
 
@@ -58,4 +58,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
-replace github.com/crewjam/saml => github.com/id-contact/saml v0.4.6-0.20220329094742-8272c4ba5def
+replace github.com/crewjam/saml => github.com/arjentz/saml v0.4.6-0.20220329094742-8272c4ba5def

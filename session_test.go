@@ -12,7 +12,7 @@ import (
 )
 
 // To enable database tests, set this at test time with
-// -ldflags "-X github.com/id-contact/auth-digid.testdb=<postgres url>"
+// -ldflags "-X github.com/verder-helpen/auth-digid.testdb=<postgres url>"
 var testdb string
 
 // Prepare clean database for test
@@ -367,7 +367,7 @@ func TestIDCSessions(t *testing.T) {
 	db, err := sql.Open("pgx", testdb)
 	require.NoError(t, err)
 	defer db.Close()
-	SessionManager := IDContactSessionManager{
+	SessionManager := VerderHelpenSessionManager{
 		db:      db,
 		timeout: 15,
 	}
@@ -403,7 +403,7 @@ func TestIDCSessionTimeout(t *testing.T) {
 	db, err := sql.Open("pgx", testdb)
 	require.NoError(t, err)
 	defer db.Close()
-	SessionManager := IDContactSessionManager{
+	SessionManager := VerderHelpenSessionManager{
 		db:      db,
 		timeout: 1,
 	}
@@ -430,12 +430,12 @@ func TestIDCSessionTimeout(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestSamlSessionIDContactMapping(t *testing.T) {
+func TestSamlSessionVerderHelpenMapping(t *testing.T) {
 	setupDB(t)
 	db, err := sql.Open("pgx", testdb)
 	require.NoError(t, err)
 	defer db.Close()
-	SessionManager := IDContactSessionManager{
+	SessionManager := VerderHelpenSessionManager{
 		db:      db,
 		timeout: 1,
 	}
@@ -497,9 +497,9 @@ func TestSamlSessionIDContactMapping(t *testing.T) {
 	assert.Equal(t, "b", session1.continuation)
 	assert.Equal(t, (*string)(nil), session1.attributeURL)
 
-	err = SamlSessionManager.SetIDContactSession(testSession1t, session1.id, "testjwt")
+	err = SamlSessionManager.SetVerderHelpenSession(testSession1t, session1.id, "testjwt")
 	require.NoError(t, err)
-	sessionid, jwt, err := SamlSessionManager.GetIDContactSession(testSession1t)
+	sessionid, jwt, err := SamlSessionManager.GetVerderHelpenSession(testSession1t)
 	require.NoError(t, err)
 	assert.Equal(t, session1.id, sessionid)
 	assert.Equal(t, "testjwt", jwt)
