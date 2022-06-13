@@ -5,34 +5,26 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ translate .language "messages.confirm_title" }}</title>
-    <style>
-      body {
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 18px;
-        line-height: 1.5;
-        margin: 1rem;
-      }
-      button {
-        font-size: 18px;
-      }
-    </style>
+    <link rel="stylesheet" media="all" href="/assets/style.css" />
   </head>
   <body>
-    <p>{{ translate .language "messages.confirm_intro" }}:</p>
-    <section>
-      <dl>
-        {{ range $key, $value := .attributes }}
-          <dt>{{ $key }}</dt>
-          <dd>{{ $value }}</dd>
-        {{ end }}
-      </dl>
-    </section>
-    <form method="post">
-      <button type="submit">{{ translate .language "messages.confirm" }}</button>
-    </form>
-    <form action="{{ .logoutPath }}" method="post">
-      <button type="submit">{{ translate .language "messages.logout" }}</button>
-    </form>
+    <main>
+      <p>{{ translate .language "messages.confirm_intro" }}:</p>
+      <section>
+        <dl>
+          {{ range $key, $value := .attributes }}
+            <dt>{{ $key }}</dt>
+            <dd>{{ $value }}</dd>
+          {{ end }}
+        </dl>
+      </section>
+      <form method="post">
+        <button type="submit" class="primary">{{ translate .language "messages.confirm" }}</button>
+      </form>
+      <form action="{{ .logoutPath }}" method="post">
+        <button type="submit">{{ translate .language "messages.logout" }}</button>
+      </form>
+    </main>
   </body>
 </html>
 {{ end }}
