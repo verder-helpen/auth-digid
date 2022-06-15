@@ -1,3 +1,5 @@
+//go:build !development
+
 package main
 
 import (
@@ -229,30 +231,6 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (c *Configuration) getConfirmTest(w http.ResponseWriter, r *http.Request) {
-	attributes := map[string]string{
-		"fullname": "Arjen Z.",
-		"city": "Nijmegen",
-	}
-
-	lang := c.Bundle.ParseAcceptLanguage(r.Header.Get("Accept-Language"))
-
-	// translate the attribute keys to the appropriate language
-	translatedAttributes := map[string]string{}
-	for k, v := range attributes {
-		// if the translation for the attribute key is not available, use the key itself
-		translation := c.Bundle.Translate(lang, "attributes."+k)
-		translatedAttributes[translation] = v
-	}
-
-	// And show the user the confirmation screen
-	c.Template.ExecuteTemplate(w, "confirm", map[string]interface{}{
-		"attributes": translatedAttributes,
-		"language":   lang,
-		"logoutPath": path.Join("/logout", "2culkcSvkeu3VC3tMNp"),
-	})
-}
-
 func (c *Configuration) doConfirm(w http.ResponseWriter, r *http.Request) {
 	samlsession := samlsp.SessionFromContext(r.Context()).(*SamlSession)
 	url_sessionid := chi.URLParam(r, "sessionid")
@@ -437,8 +415,6 @@ func (c *Configuration) BuildHandler() http.Handler {
 
 	r.Post("/start_authentication", c.startSession)
 	r.Mount("/saml/", samlSP)
-
-	r.Get("/confirm-test", c.getConfirmTest)
 
 	return r
 }
