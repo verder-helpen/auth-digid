@@ -100,15 +100,16 @@ func ParseConfiguration() Configuration {
 	}
 
 	// Load BRP configuration
+	brpServer := viper.GetString("BRPServer")
 	caCertFile := viper.GetString("CACerts")
 	caCerts, err := ioutil.ReadFile(caCertFile)
-	if err != nil {
+	if caCertFile != "" && err != nil {
 		log.Fatal("Failed to read ca certs: ", err)
 	}
 	clientCertKey := viper.GetString("BRPKey")
 	clientCertFile := viper.GetString("BRPCert")
 	clientCert, err := tls.LoadX509KeyPair(clientCertFile, clientCertKey)
-	if err != nil {
+	if clientCertFile != "" && err != nil {
 		log.Fatal("Failed to load brp key: ", err)
 	}
 
@@ -181,6 +182,11 @@ func ParseConfiguration() Configuration {
 		log.Fatal("Couldn't open database: ", err)
 	}
 
+	attributeMapping := viper.GetStringMapString("AttributeMapping")
+	if brpServer == "" && len(attributeMapping) != 0 {
+		log.Fatal("Configured an AttributeMapping but no BRPServer")
+	}
+
 	return Configuration{
 		SamlKeyPair:          keypair,
 		IdpMetadataURL:       idpMetadataURL,
@@ -191,7 +197,7 @@ func ParseConfiguration() Configuration {
 		JwtEncryptionKey: jwtEncryptionKey,
 
 		CaCerts:   caCerts,
-		BRPServer: viper.GetString("BRPServer"),
+		BRPServer: brpServer,
 		Client:    clientCert,
 
 		Template: tmpl,
@@ -210,7 +216,7 @@ func ParseConfiguration() Configuration {
 			timeout: viper.GetInt("VerderHelpenTimeout"),
 		},
 		SentryDSN:        viper.GetString("SentryDSN"),
-		AttributeMapping: viper.GetStringMapString("AttributeMapping"),
+		AttributeMapping: attributeMapping,
 		TestBSNMapping:   viper.GetStringMapString("BSNMap"),
 	}
 }

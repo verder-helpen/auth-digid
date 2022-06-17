@@ -141,15 +141,25 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		log.Error("Unexpected sectoral code", bsn[:9])
 		return
 	}
-	altbsn, ok := c.TestBSNMapping[bsn[10:]]
-	if ok {
-		bsn = "s00000000:" + altbsn
-	}
-	attributeResult, err := GetBRPAttributes(c.BRPServer, bsn[10:], c.AttributeMapping, c.Client, c.CaCerts)
-	if err != nil {
-		w.WriteHeader(500)
-		log.Error(err)
-		return
+
+	var attributeResult map[string]string
+	if c.BRPServer != "" {
+		// Replace BSN with test BSN in preprod environment
+		altbsn, ok := c.TestBSNMapping[bsn[10:]]
+		if ok {
+			bsn = "s00000000:" + altbsn
+		}
+
+		attributeResult, err = GetBRPAttributes(c.BRPServer, bsn[10:], c.AttributeMapping, c.Client, c.CaCerts)
+		if err != nil {
+			w.WriteHeader(500)
+			log.Error(err)
+			return
+		}
+	} else {
+		attributeResult = map[string]string{
+			"BSN": bsn,
+		}
 	}
 
 	// Encode attributes
