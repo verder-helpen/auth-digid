@@ -70,13 +70,17 @@ func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate requested attributes
-	for _, attribute := range request.Attributes {
-		_, ok := c.AttributeMapping[attribute]
-		if !ok {
-			w.WriteHeader(400)
-			log.Warn(err)
-			return
+	if c.BRPServer != "" {
+		// Validate requested attributes
+		for _, attribute := range request.Attributes {
+			_, ok := c.AttributeMapping[attribute]
+			if !ok {
+				w.WriteHeader(400)
+				log.WithFields(log.Fields{
+					"attribute": attribute,
+				}).Warn("Requested attribute not in mapping")
+				return
+			}
 		}
 	}
 
@@ -129,7 +133,9 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 	authnContextClass := samlsp.AttributeFromContext(r.Context(), "AuthnContextClassRef")
 	if !CompareAuthnContextClass(c.AuthnContextClassRef, authnContextClass) {
 		w.WriteHeader(500)
-		log.Error("AuthnContextClass too low", authnContextClass)
+		log.WithFields(log.Fields{
+			"class": authnContextClass,
+		}).Error("AuthnContextClass too low")
 		return
 	}
 
