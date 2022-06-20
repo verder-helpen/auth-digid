@@ -164,7 +164,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		attributeResult = map[string]string{
-			"BSN": bsn,
+			"bsn": bsn[10:],
 		}
 	}
 
