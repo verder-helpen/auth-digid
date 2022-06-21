@@ -421,16 +421,21 @@ func (c *Configuration) BuildHandler() http.Handler {
 		r.Use(sentryMiddleware.Handle)
 	}
 
-	r.Group(func(r chi.Router) {
-		r.Use(samlSP.RequireAccount)
-		r.Get("/session/{sessionid}", c.doLogin)
-		r.Get("/confirm/{sessionid}", c.getConfirm)
-		r.Post("/confirm/{sessionid}", c.doConfirm)
-		r.Post("/logout/{sessionid}", c.doLogout)
+	r.Route("/public", func(r chi.Router) {
+		r.Group(func(r chi.Router) {
+			r.Use(samlSP.RequireAccount)
+			r.Get("/session/{sessionid}", c.doLogin)
+			r.Get("/confirm/{sessionid}", c.getConfirm)
+			r.Post("/confirm/{sessionid}", c.doConfirm)
+			r.Post("/logout/{sessionid}", c.doLogout)
+		})
+
+		r.Mount("/saml/", samlSP)
 	})
 
-	r.Post("/start_authentication", c.startSession)
-	r.Mount("/saml/", samlSP)
+	r.Route("/internal", func(r chi.Router) {
+		r.Post("/start_authentication", c.startSession)
+	})
 
 	return r
 }
