@@ -60,7 +60,7 @@ func GetBRPAttributes(brpserver, bsn string, attributes map[string]string, clien
 	}
 	defer response.Body.Close()
 	if response.StatusCode >= 300 {
-		return nil, errors.New(fmt.Sprintf("Unexpected server response %d", response.StatusCode))
+		return nil, errors.New(fmt.Sprintf("Unexpected response from BRP server %d", response.StatusCode))
 	}
 
 	// Extract attributes from response
