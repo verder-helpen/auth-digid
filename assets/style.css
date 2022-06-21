@@ -1,0 +1,110 @@
+:root {
+  --primary-color: 33, 0, 112;
+  --background-color: #fafbfb;
+  --card-width: 27rem;;
+  --logo: url('/assets/logo.svg');
+  --light-grey: #ebedef;
+  --grey: #dde0e4;
+  --dark-grey: #a9a9a9;
+  --dark: #696969;
+  --border-radius: 0.2rem;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  margin: 0;
+  background-color: var(--background-color);
+}
+
+p {
+  color: var(--dark);
+}
+
+main {
+  background-color: white;
+  box-shadow: 0 0 0.4rem 0 var(--grey);
+  max-width: var(--card-width);
+  border-radius: var(--border-radius);
+  margin: 2rem auto;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+main::before {
+  content: ' ';
+  display: block;
+  width: 100%;
+  height: 50px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: var(--logo);
+  margin-bottom: 2rem;
+}
+
+dl {
+  border: 1px solid var(--grey);
+  background-color: var(--background-color);
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: var(--border-radius);
+}
+
+dl dt {
+  color: rgb(var(--primary-color));
+  font-size: 0.9rem;
+}
+
+dl dd {
+  margin: 0.2rem 0 0.7rem 0;
+}
+
+
+dl dd:last-child {
+  margin-bottom: 0.2rem;
+}
+
+button {
+  position: relative;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.9rem;
+  font-weight: bold;
+  line-height: 1.5;
+  width: 100%;
+  background: white;
+  border: 1px solid var(--dark);
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-radius: var(--border-radius);
+  text-align: left;
+  color: var(--dark);
+  transition: all 100ms;
+}
+
+button:after {
+  content: ' ';
+  position: absolute;
+  border: 2px solid var(--dark);
+  width: 0.6rem;
+  height: 0.6rem;
+  border-left: none;
+  border-bottom: none;
+  transform: translate(-50%, -50%) rotate(45deg);
+  right: 1rem;
+  top: 50%;
+}
+
+button.primary, button:hover {
+  border-color: rgb(var(--primary-color));
+  color: rgb(var(--primary-color));
+}
+
+button.primary:after, button:hover:after {
+  border-color: rgb(var(--primary-color));
+}
+
+button:hover {
+  background-color: rgba(var(--primary-color), 0.02);
+}
