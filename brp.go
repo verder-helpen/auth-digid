@@ -2,8 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,39 +33,52 @@ func walkAttributeTree(attribute string, tree interface{}) (string, error) {
 }
 
 // Get the desired attributes from the BRP data associated with a BSN
-func GetBRPAttributes(brpserver, bsn string, attributes map[string]string, clientCert tls.Certificate, caCerts []byte) (map[string]string, error) {
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCerts)
-
+func GetBRPAttributes(brpserver, bsn string, attributes map[string]string, apiKey string) (map[string]string, error) {
 	// Setup client for mTLS
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs:      caCertPool,
-				Certificates: []tls.Certificate{clientCert},
-			},
-		},
-	}
+	client := &http.Client{}
 
 	// Do the network request to the BRP server
-	request, err := json.Marshal(map[string]string{"bsn": bsn})
+
+	// v2.0 of HaalCentraal expects a comma-separated string, in v2.1 this will be an array of strings
+	attributesStr := ""
+	for _, value := range attributes {
+		attributesStr += value + ","
+	}
+	attributesStr = attributesStr[:len(attributesStr)-1] // chop off the last comma
+
+	body, err := json.Marshal(map[string]interface{}{
+		"type":                "RaadpleegMetBurgerservicenummer",
+		"burgerservicenummer": [1]string{bsn},
+		"fields":              attributesStr,
+	})
 	if err != nil {
 		return nil, err
 	}
-	response, err := client.Post(brpserver, "application/json", bytes.NewReader(request))
+
+	request, err := http.NewRequest("POST", brpserver, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
+
+	// request.Header.Set("Content-Type", "application/json")
+	// request.Header.Add("X-API-KEY", apiKey)
+
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
 	defer response.Body.Close()
 	if response.StatusCode >= 300 {
 		return nil, errors.New(fmt.Sprintf("Unexpected response from BRP server %d", response.StatusCode))
 	}
 
 	// Extract attributes from response
-	body, err := ioutil.ReadAll(response.Body)
+	body, err = ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
+
 	var brpData interface{}
 	err = json.Unmarshal(body, &brpData)
 	if err != nil {
