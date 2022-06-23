@@ -10,6 +10,30 @@ import (
 	"strings"
 )
 
+func parseResponsedata(respData interface{}) (interface{}, error) {
+	// Remove unneeded stuff from the response
+	brpMap, ok := respData.(map[string]interface{})
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Unexpected BRP response data"))
+	}
+
+	personData, ok := brpMap["personen"]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Unexpected BRP response data"))
+	}
+
+	personArray, ok := personData.([]interface{})
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Unexpected BRP response data"))
+	}
+
+	if len(personArray) != 1 {
+		return nil, errors.New(fmt.Sprintf("Multiple people for same BSN, cannot make a logical decision"))
+	}
+
+	return personArray[0], nil
+}
+
 // Walk through the chain of maps reconstructed from the json to fetch the requested attribute
 func walkAttributeTree(attribute string, tree interface{}) (string, error) {
 	parts := strings.Split(attribute, ".")
@@ -60,8 +84,8 @@ func GetBRPAttributes(brpserver, bsn string, attributes map[string]string, apiKe
 		return nil, err
 	}
 
-	// request.Header.Set("Content-Type", "application/json")
-	// request.Header.Add("X-API-KEY", apiKey)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Add("X-API-KEY", apiKey)
 
 	response, err := client.Do(request)
 	if err != nil {
@@ -79,8 +103,13 @@ func GetBRPAttributes(brpserver, bsn string, attributes map[string]string, apiKe
 		return nil, err
 	}
 
-	var brpData interface{}
-	err = json.Unmarshal(body, &brpData)
+	var respData interface{}
+	err = json.Unmarshal(body, &respData)
+	if err != nil {
+		return nil, err
+	}
+
+	brpData, err := parseResponsedata(respData)
 	if err != nil {
 		return nil, err
 	}

@@ -40,18 +40,21 @@ func TestWalkAttributeTree(t *testing.T) {
 func TestFullLookup(t *testing.T) {
 	server := http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// TODO verify the X-API-KEY header
+			assert.Equal(t, r.Header.Get("X-API-KEY"), "apikey123")
+			assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 			b, err := io.ReadAll(r.Body)
 			assert.NoError(t, err)
 			assert.Equal(t, []byte(`{"burgerservicenummer":["123456789"],"fields":"a,c.d","type":"RaadpleegMetBurgerservicenummer"}`), b)
-			w.Write([]byte(`
-{
-	"a": "b",
-	"c": {
-		"d":"e"
-	}
-}
-`))
+			w.Write([]byte(`{
+	"personen": [{
+			"a":"b",
+			"c": {
+				"d":"e"
+			}
+		}
+	],
+	"type":"RaadpleegMetBurgerservicenummer"
+}`))
 		}),
 		Addr: ":27349",
 	}
