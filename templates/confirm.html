@@ -19,10 +19,10 @@
         </dl>
       </section>
       <form method="post">
-        <button type="submit" class="primary">{{ translate .language "messages.confirm" }}</button>
+        <button type="submit" class="button primary">{{ translate .language "messages.confirm" }}</button>
       </form>
       <form action="{{ .logoutPath }}" method="post">
-        <button type="submit">{{ translate .language "messages.logout" }}</button>
+        <button type="submit" class="button">{{ translate .language "messages.logout" }}</button>
       </form>
     </main>
   </body>
