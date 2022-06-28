@@ -429,9 +429,9 @@ func (c *Configuration) BuildHandler() http.Handler {
 			r.Post("/confirm/{sessionid}", c.doConfirm)
 			r.Post("/logout/{sessionid}", c.doLogout)
 		})
-
-		r.Mount("/saml/", samlSP)
 	})
+
+	r.Mount("/saml/", samlSP);
 
 	r.Route("/internal", func(r chi.Router) {
 		r.Post("/start_authentication", c.startSession)
