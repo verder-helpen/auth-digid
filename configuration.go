@@ -29,8 +29,7 @@ type Configuration struct {
 
 	// BRP configuration
 	BRPServer string
-	Client    tls.Certificate
-	CaCerts   []byte
+	BRPApiKey string
 
 	TestBSNMapping map[string]string
 
@@ -101,17 +100,7 @@ func ParseConfiguration() Configuration {
 
 	// Load BRP configuration
 	brpServer := viper.GetString("BRPServer")
-	caCertFile := viper.GetString("CACerts")
-	caCerts, err := ioutil.ReadFile(caCertFile)
-	if caCertFile != "" && err != nil {
-		log.Fatal("Failed to read ca certs: ", err)
-	}
-	clientCertKey := viper.GetString("BRPKey")
-	clientCertFile := viper.GetString("BRPCert")
-	clientCert, err := tls.LoadX509KeyPair(clientCertFile, clientCertKey)
-	if clientCertFile != "" && err != nil {
-		log.Fatal("Failed to load brp key: ", err)
-	}
+	brpApiKey := viper.GetString("BRPApiKey")
 
 	// Load encryption keys
 	jwtSigningKeyFile := viper.GetString("JWTSigningKey")
@@ -196,9 +185,8 @@ func ParseConfiguration() Configuration {
 		JwtSigningKey:    jwtSigningKey,
 		JwtEncryptionKey: jwtEncryptionKey,
 
-		CaCerts:   caCerts,
 		BRPServer: brpServer,
-		Client:    clientCert,
+		BRPApiKey: brpApiKey,
 
 		Template: tmpl,
 		Bundle:   &bundle,

@@ -1,14 +1,11 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"io"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestWalkAttributeTree(t *testing.T) {
@@ -41,190 +38,34 @@ func TestWalkAttributeTree(t *testing.T) {
 }
 
 func TestFullLookup(t *testing.T) {
-	ca := []byte(`-----BEGIN CERTIFICATE-----
-MIIDazCCAlOgAwIBAgIUOw5JCvPE0l/9H3E0nCdo5NYrl6MwDQYJKoZIhvcNAQEL
-BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
-GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yMTA4MTAxMDMzNDJaFw00ODEy
-MjYxMDMzNDJaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
-HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDOEhZs1Nt0frXQRqsz66mEpnkAYFpZixCAvBEVKg0n
-oYFRLKAzzqJuVp+e9s5r8ErTFH1dnK34MwkRPm/fPF4JbmcPY0fwW8IijIQy9fLz
-PD1Aflt/zeJvxt+qNtQPq/mE+ZVA0rmP37SmhjK/ErAY74iiWPsRaAPc32NMQVNe
-ClpW2jVKc6F/gjsvSB6Jy8E1nuLsq/hNw5QNtp29BBOs9cHLm18L8ehH81qTUvgG
-jRJHl4MHsjzHoLTtF2fjR/+sf0W1mR1bXisfQDMBSgsBibrb0Ky8LoLCpC8lsdWk
-Aeim8puJhJQBkcJMkj8ox8HgHJSprgqBEi7WVBWIFGHtAgMBAAGjUzBRMB0GA1Ud
-DgQWBBRCLQlxEgIqAQrF4R8wZtAnifj1FzAfBgNVHSMEGDAWgBRCLQlxEgIqAQrF
-4R8wZtAnifj1FzAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBF
-BDjba+fIMUUo/g40RI9gFPdY7LKMwgJc4ZTDfDgEMW3ZkVLnCO+ZscIHYx3DGvnn
-q2/e9oiipPfv41WCknE1YTFw+l9qW3j2wmUJGXIbO0pwoDBRkcJB3P1JJ1Qx4RE4
-5z4r4YRz5EqO/Sny5E8D05RboAnbO1lDFpDNnZrt+9Q2n8B4bAI1tq31k8VeAwZj
-byQbwN1lKl4KVooryZ9P5VxJAo3TzEG9bZuCL1f1kbUXWuipkTchkFXOOBNlVaW2
-hcAyCsIuRmr9WAtm8jL5hx/r2XJ1bJnL0Db5XjYDmOIAubJHBHhNEudVGaxhBb0A
-ArOx7iIvoX/HUMDQISlL
------END CERTIFICATE-----`,
-	)
-
-	serverKey := []byte(`-----BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAwl0uf7k/gI5gCiwL4pm/bMHwFL9cvkjmRIPrBoCNd2waGUm2
-G789wc5SnJJj9NiyOEXPZVhZe/mggPqejrhBVg/7jf3A/YBxmunmcEz8koV668VH
-gUGkmubq0MWWqhrhlRnNEjIh30JCPVPHLn+943UeKLE/QLMgic11dgIra84Z49Hy
-vMXC6g2z2veMY1fDsryLTmPLTtRpjV0bl9tVYsM+rlTWtV84Ty3ugVqfl9IcrAHr
-+3DjGhtUocwAIHn04pCD744i4NdYKJnCNh8r5qZz1ls/VeHHE3OCvWxWmzjLdIZp
-rbSFGk3mpZt9GKAf/3G8ePYv1Ksef6oy4RWkYQIDAQABAoIBAD4EG2UXh6KOSyiT
-u0sXQZQDIYaNNJtmiUqNSP1vITRcoss00M1zrNHc8lERCKHETsFTzQQKN6suED93
-OAZT1k0OlnZM5Do+tID4ZtWoSuK5gmoeLV2Zw1rFmWD52sP2BcpcTCmlI1eoPZhx
-1dkJW15rLS9Qttz/Cr/NddAsiww/TKkCmUArQq5Wf5uOMTjcF9pmeOE+gY60mFeR
-2dNbLviKZ4t7v/0+HsDEyz4f9D095/NMmmHBG1NpBWWOD4V/Dn6otOBg4Ca6LQKt
-Ok9WjVWh1iTiL002+oFJ2hbeJ/CDmZxh6Z0LVpbgA1NiKIkfX+oe2F7PbfRUIicX
-oScaba0CgYEA+GkgsQs79BROuj8qPLkEbCc0MQgDDWV9ZjlRUSplN+lAMYTyi+MR
-nOaua22XNy+iBCSxXJxUqR1yt2UT+5VJ1ZoK/fZut2bJHPbTSy9PVTTggv7j+1wZ
-gEXlmWxRVjfr+TZ6gQO/QGzeZ9QE6KsFxMsN/ganYdmdfF5MdCKa8hMCgYEAyE1X
-8gXoCgs+L6IrpCx4YO3MTnoMVUxEvy9wZMO1bboJbCnrRCln/UmHzMoZPy8/M1Y6
-cScrPzVGe1fhB1pFzbQkRpTGb5U0hCxGiE5PFvoP77Tgj09wTnBccpgFwEp6bCpw
-qdxyN+Gw17fGf1TDqVqTlMDVMR9NQ2JKQ7Yr/jsCgYAR92iJ5YociSt4hQEFC0yq
-ldtMgIvX+DMtpY+gEzTm6lPeQQNZ4r5vXq/WzUJWl3dcXVsGm7fz01Fsuj7Lv2xr
-qoyI+b3gPerl0WRO18khHIXwc4cBsxOVF3kXs6HeXoUOrUYG9sJqYnVjhQ4l1djA
-9v64FLsedKLTT+6vp6EVSQKBgBzZPuRlw2DG88LqiXyQxxm2xik7XNFgNbqPe5GX
-uma+V6MTeoYLrKWHVJ7DMNWv2VtsfOhVKt5kru0O4CMt9kXFP0BHJzlk9PZgZhw1
-oyB9DZSJqZoaZ+N0PWxnxtRGJdG0Xxun229++vhmyJkIPVID8KOJDmuPxZIB8w5D
-i5yHAoGBAM3Jn2ctZp81uBl5Mg84iZiqrqEzP4MM7wxseZ8URD+VY48TbGKQYaE+
-lRgAOCtZ6+lW85cGP9hNr/Mt3Tb0cUgTd/UowYQpIWvyDAjP/MP4UBrjU0iJgwhr
-SPMw7k6tJRkHMl1R7jsFUGO2GgPkwB63MQ6Sa9BhMONIoymB1DeR
------END RSA PRIVATE KEY-----`,
-	)
-
-	serverCert := []byte(`-----BEGIN CERTIFICATE-----
-MIIDVjCCAj6gAwIBAgIBAjANBgkqhkiG9w0BAQsFADBFMQswCQYDVQQGEwJBVTET
-MBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQ
-dHkgTHRkMB4XDTIxMDgxMDExMjE0MFoXDTQ4MTIyNjExMjE0MFowRTELMAkGA1UE
-BhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoMGEludGVybmV0IFdp
-ZGdpdHMgUHR5IEx0ZDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMJd
-Ln+5P4COYAosC+KZv2zB8BS/XL5I5kSD6waAjXdsGhlJthu/PcHOUpySY/TYsjhF
-z2VYWXv5oID6no64QVYP+439wP2AcZrp5nBM/JKFeuvFR4FBpJrm6tDFlqoa4ZUZ
-zRIyId9CQj1Txy5/veN1HiixP0CzIInNdXYCK2vOGePR8rzFwuoNs9r3jGNXw7K8
-i05jy07UaY1dG5fbVWLDPq5U1rVfOE8t7oFan5fSHKwB6/tw4xobVKHMACB59OKQ
-g++OIuDXWCiZwjYfK+amc9ZbP1XhxxNzgr1sVps4y3SGaa20hRpN5qWbfRigH/9x
-vHj2L9SrHn+qMuEVpGECAwEAAaNRME8wHwYDVR0jBBgwFoAUQi0JcRICKgEKxeEf
-MGbQJ4n49RcwCQYDVR0TBAIwADALBgNVHQ8EBAMCBPAwFAYDVR0RBA0wC4IJbG9j
-YWxob3N0MA0GCSqGSIb3DQEBCwUAA4IBAQCrRfTSI46wm39G1SuWj4dt9xPPLsXy
-lUX5C1BxoeOc+YNktrp6xMbGO1YOuoncMWRzzwVsrsFGKjVNYWf+apUxrLedwkrN
-Tt8LWyxJ3sLoxAgGpDfkPNIAC5+cyjKkVs14kjl9LidIZcqr8IZ2m2UmlU+lpEGb
-emsll8o7elBk3fL11YnvaNIKds9UcwF8+9XYnMgWtAai4Qja/M7xZtviDQkIoGAu
-oYDyRTfBl1duNaErMpgCVInfWf8KNuGhYFpNnDw8YFniKI+ikoPlW8610DbNl7ho
-eFQ4XaP1gozZ6Yz3WGt2W7Cx2+2CvaEv3ioMjOIVpGoHnqoXfGd8QvpJ
------END CERTIFICATE-----
------BEGIN CERTIFICATE-----
-MIIDazCCAlOgAwIBAgIUOw5JCvPE0l/9H3E0nCdo5NYrl6MwDQYJKoZIhvcNAQEL
-BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
-GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yMTA4MTAxMDMzNDJaFw00ODEy
-MjYxMDMzNDJaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
-HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDOEhZs1Nt0frXQRqsz66mEpnkAYFpZixCAvBEVKg0n
-oYFRLKAzzqJuVp+e9s5r8ErTFH1dnK34MwkRPm/fPF4JbmcPY0fwW8IijIQy9fLz
-PD1Aflt/zeJvxt+qNtQPq/mE+ZVA0rmP37SmhjK/ErAY74iiWPsRaAPc32NMQVNe
-ClpW2jVKc6F/gjsvSB6Jy8E1nuLsq/hNw5QNtp29BBOs9cHLm18L8ehH81qTUvgG
-jRJHl4MHsjzHoLTtF2fjR/+sf0W1mR1bXisfQDMBSgsBibrb0Ky8LoLCpC8lsdWk
-Aeim8puJhJQBkcJMkj8ox8HgHJSprgqBEi7WVBWIFGHtAgMBAAGjUzBRMB0GA1Ud
-DgQWBBRCLQlxEgIqAQrF4R8wZtAnifj1FzAfBgNVHSMEGDAWgBRCLQlxEgIqAQrF
-4R8wZtAnifj1FzAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBF
-BDjba+fIMUUo/g40RI9gFPdY7LKMwgJc4ZTDfDgEMW3ZkVLnCO+ZscIHYx3DGvnn
-q2/e9oiipPfv41WCknE1YTFw+l9qW3j2wmUJGXIbO0pwoDBRkcJB3P1JJ1Qx4RE4
-5z4r4YRz5EqO/Sny5E8D05RboAnbO1lDFpDNnZrt+9Q2n8B4bAI1tq31k8VeAwZj
-byQbwN1lKl4KVooryZ9P5VxJAo3TzEG9bZuCL1f1kbUXWuipkTchkFXOOBNlVaW2
-hcAyCsIuRmr9WAtm8jL5hx/r2XJ1bJnL0Db5XjYDmOIAubJHBHhNEudVGaxhBb0A
-ArOx7iIvoX/HUMDQISlL
------END CERTIFICATE-----`,
-	)
-
-	clientKey := []byte(`-----BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAmf6AD85T0u1yH7fb8yzjn2l/6e1X03a0TCxN/9SWMbv19BTS
-oSHkiMw1D7Xzz7J3XWD1C+LGgDojxDayXRIQVaSQB2oqK6RiUHV/QgQQBJSDyBw8
-/6FLwlzNgOg5bk+bPyPlG1wFkITvyg8x6Rx5Jyzoo8YRD/IUE51ZoKSmRMPv7viw
-Ye9LstV/m4yHWd/6ONkoliRZMBXefNmQ8BVK4VKAtx/B3NYpcbLPyZMnF9ZAVTfn
-t70YO2kJ9QNJB9xZMezLBVWMHwARdrhJkaXavAV6XlMKZbMR5aiE82wnYNe81jkI
-ocO8e0QmaRf+8d6g0raUbHzwsw9Og/6LS0+ZVQIDAQABAoIBABVdHV8T/MUSc/a6
-hyUhYSLIfBpz9u87VKAMtXV8hKm5rdGC4gXAsffYfLQFRiHWXIDz5osTlv5LEpMy
-E2SeEO4QunqM2/TaBVmsM09xSNeZ0v58DGpaciwwu8Hadb08BgmobSxyg8Mc7jdW
-DFKOxLAOpuexnsRbjTV7aufCb96yKQbocw9pIoJ+X36IVrHDdcu/gINYOk7ikQC3
-8E3FJCq3EqjP+0DbkMKIsDtzNinYyRm+bzwfH3iDMbr5XnMAU+RQpzx3dvXcEis6
-S3snS/qFPUB8eQ5zpEYvDzCe9wNtWkHL5C6mU0nbM9AJ8aPkjlgGGV2jUAitfA5X
-vyiG5bECgYEAy+fEn/Pap7d869aVa7VoPaLeJ92zYP/j0uebR5TEW4YD2hn0yqE3
-0yMQgu9L7XD09ujrqc3T3TlYMJH9+eGhMUW8srQ76OKA6jJsPToYUpCaylKenphz
-RvYkBGdt6ImZuZ85SjZBkePRVN4WK0TAPW/J8MLJUOZ107YxfhfcoNsCgYEAwVZW
-lcigd/SQRXfu9t31jYfAxH9ucfZkuvZp2B51CJbLoKXg2w15k0qmujWFdlPnZfV9
-bpvoOnSIK4sHS99sZ6aullB2Aer7fgJI7lezLHDCp8aA6EjH4aJ/9Vl5zpjzEYrY
-YagkvpPjD2Vz+5tf37WxPvtzCstuNeGg+Oul7Y8CgYBJvOLqRTFJfZ17W/plHRE5
-WPCl0hLQfTlSR9drp2zq/Cfgc4qGzI53mDKcZxU6JKMxt0GiAoEfe2FdDy6dcu7r
-9qAqr+sKaP7dsqZZ7exlz01q5T3fdJobi1+zCARDF5+z9NSu9bf4nj5RRo8VzqMG
-lKqempJa4zyw9y4mv1JWCQKBgD/CZmmdMXZ92/pc9BzL1EgpheQHlnfU5yFVVFCm
-srfzaxH+wmnbRsXRb6ynK+16/Cv+yq/okKx+c83QWsal1w1Txe3ieRhm0yuaO00G
-9Rrp0PgdmbOBFRIPUh2qtWXxwO9/F58VIZEMGmyga6CFfBe9xsdbi3P65My2LS0K
-Ib13AoGBAK6p8tcx3dyL5PWyEsSh0IA+0Fj/2k2Ku/pmRT0kGhoCu7xv98M6V8JD
-QI7Bp9t8+58zsadNRJjhpbnq5Se6iex/3kEdR8Fw3QDCRS9gSnrme/U/wij0Bnru
-b+vyL5FmzVuqLGNHqscH2SA18CttGWnTE/VAa5dzExmliTTLtKkF
------END RSA PRIVATE KEY-----`,
-	)
-
-	clientCert := []byte(`-----BEGIN CERTIFICATE-----
-MIIDVjCCAj6gAwIBAgIBATANBgkqhkiG9w0BAQsFADBFMQswCQYDVQQGEwJBVTET
-MBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQ
-dHkgTHRkMB4XDTIxMDgxMDExMjEyOVoXDTQ4MTIyNjExMjEyOVowRTELMAkGA1UE
-BhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoMGEludGVybmV0IFdp
-ZGdpdHMgUHR5IEx0ZDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJn+
-gA/OU9Ltch+32/Ms459pf+ntV9N2tEwsTf/UljG79fQU0qEh5IjMNQ+188+yd11g
-9QvixoA6I8Q2sl0SEFWkkAdqKiukYlB1f0IEEASUg8gcPP+hS8JczYDoOW5Pmz8j
-5RtcBZCE78oPMekceScs6KPGEQ/yFBOdWaCkpkTD7+74sGHvS7LVf5uMh1nf+jjZ
-KJYkWTAV3nzZkPAVSuFSgLcfwdzWKXGyz8mTJxfWQFU357e9GDtpCfUDSQfcWTHs
-ywVVjB8AEXa4SZGl2rwFel5TCmWzEeWohPNsJ2DXvNY5CKHDvHtEJmkX/vHeoNK2
-lGx88LMPToP+i0tPmVUCAwEAAaNRME8wHwYDVR0jBBgwFoAUQi0JcRICKgEKxeEf
-MGbQJ4n49RcwCQYDVR0TBAIwADALBgNVHQ8EBAMCBPAwFAYDVR0RBA0wC4IJbG9j
-YWxob3N0MA0GCSqGSIb3DQEBCwUAA4IBAQAYmjCBwpBewTpHDJK4PsdsrLAa4657
-9GwPqZCI/U3puubRGpY6bnxO+Uzl77dR+UjikIQBzvnYecUVqjf64iCFzZUl48MM
-lbtH2k0vyM04BGBtfFFQjsqjOR839z0VwqnksYMj+eOK6845CMTXVB50nUS/TgvJ
-JWW+rgrZLJ7mm8rIIfgD119oTPBdnBmURucA8x7pdRa0s4yLM6NmPl+1jgl0NVkf
-ofcdUgQ2vE3D7BHS9BsK7ETT35vkZB1GJskV1AtHGvlp+m79cFtRdZZsBvUbzIM9
-HeQY5oEtJUfRHyCc52cswn83BB9hTLQASJ0ZYRCQEnM4yfS3DawEyggZ
------END CERTIFICATE-----`,
-	)
-
-	serverPair, err := tls.X509KeyPair(serverCert, serverKey)
-	require.NoError(t, err)
-
-	testCAs := x509.NewCertPool()
-	require.True(t, testCAs.AppendCertsFromPEM(ca))
-
 	server := http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, r.Header.Get("X-API-KEY"), "apikey123")
+			assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 			b, err := io.ReadAll(r.Body)
 			assert.NoError(t, err)
-			assert.Equal(t, []byte(`{"bsn":"123456789"}`), b)
-			w.Write([]byte(`
-{
-	"a": "b",
-	"c": {
-		"d":"e"
-	}
-}
-`))
+			assert.Equal(t, []byte(`{"burgerservicenummer":["123456789"],"fields":"a,c.d","type":"RaadpleegMetBurgerservicenummer"}`), b)
+			w.Write([]byte(`{
+	"personen": [{
+			"a":"b",
+			"c": {
+				"d":"e"
+			}
+		}
+	],
+	"type":"RaadpleegMetBurgerservicenummer"
+}`))
 		}),
 		Addr: ":27349",
-		TLSConfig: &tls.Config{
-			ClientCAs:    testCAs,
-			Certificates: []tls.Certificate{serverPair},
-			ClientAuth:   tls.RequireAndVerifyClientCert,
-		},
 	}
 
 	go func() {
-		server.ListenAndServeTLS("", "")
+		server.ListenAndServe()
 	}()
 
 	defer server.Close()
 
-	clientPair, err := tls.X509KeyPair(clientCert, clientKey)
-	require.NoError(t, err)
-
-	attributes, err := GetBRPAttributes("https://localhost:27349", "123456789", map[string]string{"test1": "a", "test2": "c.d"}, clientPair, ca)
+	attributes, err := GetBRPAttributes("http://localhost:27349", "123456789", map[string]string{"test1": "a", "test2": "c.d"}, "apikey123")
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{"test1": "b", "test2": "e"}, attributes)
 }
