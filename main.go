@@ -421,7 +421,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 		r.Use(sentryMiddleware.Handle)
 	}
 
-	r.Route("/public", func(r chi.Router) {
+	r.Route("/", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(samlSP.RequireAccount)
 			r.Get("/session/{sessionid}", c.doLogin)
@@ -431,7 +431,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 		})
 	})
 
-	r.Mount("/saml/", samlSP);
+	r.Mount("/saml/", samlSP)
 
 	r.Route("/internal", func(r chi.Router) {
 		r.Post("/start_authentication", c.startSession)
