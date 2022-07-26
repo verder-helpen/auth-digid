@@ -195,7 +195,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 	// Construct router
 	r := chi.NewRouter()
 
-	r.Route("/public", func(r chi.Router) {
+	r.Route("/", func(r chi.Router) {
 		r.Get("/session/{sessionid}", c.doLogin)
 		r.Get("/confirm/{sessionid}", c.getConfirm)
 		r.Post("/confirm/{sessionid}", c.doConfirm)
