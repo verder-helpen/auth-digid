@@ -3,11 +3,11 @@ module github.com/verder-helpen/auth-digid
 go 1.17
 
 require (
-	github.com/crewjam/saml v0.4.6
+	github.com/crewjam/saml v0.4.8
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-co-op/gocron v1.13.0
-	github.com/golang-jwt/jwt/v4 v4.4.1
+	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/lestrrat-go/jwx v1.2.20
 	github.com/sirupsen/logrus v1.8.1
@@ -57,5 +57,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
-
-replace github.com/crewjam/saml => github.com/arjentz/saml v0.4.6-0.20220329094742-8272c4ba5def
