@@ -409,6 +409,7 @@ func (c *Configuration) BuildHandler() http.Handler {
 		Domain:   c.ServerURL.Host,
 		HTTPOnly: true,
 		Secure:   c.ServerURL.Scheme == "https",
+		SameSite: http.SameSiteLaxMode,
 		MaxAge:   60 * time.Minute,
 		Codec:    c.SamlSessionManager,
 	}
