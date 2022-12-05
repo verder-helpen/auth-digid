@@ -1,0 +1,237 @@
+# github.com/beevik/etree v1.1.0
+## explicit
+github.com/beevik/etree
+# github.com/crewjam/httperr v0.2.0
+## explicit; go 1.13
+github.com/crewjam/httperr
+# github.com/crewjam/saml v0.4.10
+## explicit; go 1.16
+github.com/crewjam/saml
+github.com/crewjam/saml/logger
+github.com/crewjam/saml/samlsp
+github.com/crewjam/saml/xmlenc
+# github.com/davecgh/go-spew v1.1.1
+## explicit
+github.com/davecgh/go-spew/spew
+# github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0
+## explicit; go 1.17
+github.com/decred/dcrd/dcrec/secp256k1/v4
+# github.com/fsnotify/fsnotify v1.6.0
+## explicit; go 1.16
+github.com/fsnotify/fsnotify
+# github.com/getsentry/sentry-go v0.13.0
+## explicit; go 1.17
+github.com/getsentry/sentry-go
+github.com/getsentry/sentry-go/http
+github.com/getsentry/sentry-go/internal/crypto/randutil
+github.com/getsentry/sentry-go/internal/debug
+github.com/getsentry/sentry-go/internal/ratelimit
+# github.com/go-chi/chi/v5 v5.0.7
+## explicit; go 1.14
+github.com/go-chi/chi/v5
+# github.com/go-co-op/gocron v1.17.1
+## explicit; go 1.19
+github.com/go-co-op/gocron
+# github.com/goccy/go-json v0.9.11
+## explicit; go 1.12
+github.com/goccy/go-json
+github.com/goccy/go-json/internal/decoder
+github.com/goccy/go-json/internal/encoder
+github.com/goccy/go-json/internal/encoder/vm
+github.com/goccy/go-json/internal/encoder/vm_color
+github.com/goccy/go-json/internal/encoder/vm_color_indent
+github.com/goccy/go-json/internal/encoder/vm_indent
+github.com/goccy/go-json/internal/errors
+github.com/goccy/go-json/internal/runtime
+# github.com/golang-jwt/jwt/v4 v4.4.2
+## explicit; go 1.16
+github.com/golang-jwt/jwt/v4
+# github.com/hashicorp/hcl v1.0.0
+## explicit
+github.com/hashicorp/hcl
+github.com/hashicorp/hcl/hcl/ast
+github.com/hashicorp/hcl/hcl/parser
+github.com/hashicorp/hcl/hcl/printer
+github.com/hashicorp/hcl/hcl/scanner
+github.com/hashicorp/hcl/hcl/strconv
+github.com/hashicorp/hcl/hcl/token
+github.com/hashicorp/hcl/json/parser
+github.com/hashicorp/hcl/json/scanner
+github.com/hashicorp/hcl/json/token
+# github.com/jackc/chunkreader/v2 v2.0.1
+## explicit; go 1.12
+github.com/jackc/chunkreader/v2
+# github.com/jackc/pgconn v1.13.0
+## explicit; go 1.12
+github.com/jackc/pgconn
+github.com/jackc/pgconn/internal/ctxwatch
+github.com/jackc/pgconn/stmtcache
+# github.com/jackc/pgio v1.0.0
+## explicit; go 1.12
+github.com/jackc/pgio
+# github.com/jackc/pgpassfile v1.0.0
+## explicit; go 1.12
+github.com/jackc/pgpassfile
+# github.com/jackc/pgproto3/v2 v2.3.1
+## explicit; go 1.12
+github.com/jackc/pgproto3/v2
+# github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b
+## explicit; go 1.14
+github.com/jackc/pgservicefile
+# github.com/jackc/pgtype v1.12.0
+## explicit; go 1.13
+github.com/jackc/pgtype
+# github.com/jackc/pgx/v4 v4.17.2
+## explicit; go 1.13
+github.com/jackc/pgx/v4
+github.com/jackc/pgx/v4/internal/sanitize
+github.com/jackc/pgx/v4/stdlib
+# github.com/jonboulle/clockwork v0.3.0
+## explicit; go 1.13
+github.com/jonboulle/clockwork
+# github.com/lestrrat-go/backoff/v2 v2.0.8
+## explicit; go 1.16
+github.com/lestrrat-go/backoff/v2
+# github.com/lestrrat-go/blackmagic v1.0.1
+## explicit; go 1.16
+github.com/lestrrat-go/blackmagic
+# github.com/lestrrat-go/httpcc v1.0.1
+## explicit; go 1.16
+github.com/lestrrat-go/httpcc
+# github.com/lestrrat-go/iter v1.0.2
+## explicit; go 1.13
+github.com/lestrrat-go/iter/arrayiter
+github.com/lestrrat-go/iter/mapiter
+# github.com/lestrrat-go/jwx v1.2.25
+## explicit; go 1.15
+github.com/lestrrat-go/jwx
+github.com/lestrrat-go/jwx/internal/base64
+github.com/lestrrat-go/jwx/internal/ecutil
+github.com/lestrrat-go/jwx/internal/iter
+github.com/lestrrat-go/jwx/internal/json
+github.com/lestrrat-go/jwx/internal/keyconv
+github.com/lestrrat-go/jwx/internal/pool
+github.com/lestrrat-go/jwx/jwa
+github.com/lestrrat-go/jwx/jwe
+github.com/lestrrat-go/jwx/jwe/internal/aescbc
+github.com/lestrrat-go/jwx/jwe/internal/cipher
+github.com/lestrrat-go/jwx/jwe/internal/concatkdf
+github.com/lestrrat-go/jwx/jwe/internal/content_crypt
+github.com/lestrrat-go/jwx/jwe/internal/keyenc
+github.com/lestrrat-go/jwx/jwe/internal/keygen
+github.com/lestrrat-go/jwx/jwk
+github.com/lestrrat-go/jwx/jws
+github.com/lestrrat-go/jwx/jwt
+github.com/lestrrat-go/jwx/jwt/internal/types
+github.com/lestrrat-go/jwx/x25519
+# github.com/lestrrat-go/option v1.0.0
+## explicit; go 1.16
+github.com/lestrrat-go/option
+# github.com/magiconair/properties v1.8.6
+## explicit; go 1.13
+github.com/magiconair/properties
+# github.com/mattermost/xml-roundtrip-validator v0.1.0
+## explicit; go 1.14
+github.com/mattermost/xml-roundtrip-validator
+# github.com/mitchellh/mapstructure v1.5.0
+## explicit; go 1.14
+github.com/mitchellh/mapstructure
+# github.com/pelletier/go-toml v1.9.5
+## explicit; go 1.12
+github.com/pelletier/go-toml
+# github.com/pelletier/go-toml/v2 v2.0.5
+## explicit; go 1.16
+github.com/pelletier/go-toml/v2
+github.com/pelletier/go-toml/v2/internal/ast
+github.com/pelletier/go-toml/v2/internal/danger
+github.com/pelletier/go-toml/v2/internal/tracker
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
+# github.com/pmezard/go-difflib v1.0.0
+## explicit
+github.com/pmezard/go-difflib/difflib
+# github.com/robfig/cron/v3 v3.0.1
+## explicit; go 1.12
+github.com/robfig/cron/v3
+# github.com/russellhaering/goxmldsig v1.1.1
+## explicit; go 1.15
+github.com/russellhaering/goxmldsig
+github.com/russellhaering/goxmldsig/etreeutils
+github.com/russellhaering/goxmldsig/types
+# github.com/sirupsen/logrus v1.9.0
+## explicit; go 1.13
+github.com/sirupsen/logrus
+# github.com/spf13/afero v1.9.2
+## explicit; go 1.16
+github.com/spf13/afero
+github.com/spf13/afero/internal/common
+github.com/spf13/afero/mem
+# github.com/spf13/cast v1.5.0
+## explicit; go 1.18
+github.com/spf13/cast
+# github.com/spf13/jwalterweatherman v1.1.0
+## explicit
+github.com/spf13/jwalterweatherman
+# github.com/spf13/pflag v1.0.5
+## explicit; go 1.12
+github.com/spf13/pflag
+# github.com/spf13/viper v1.13.0
+## explicit; go 1.17
+github.com/spf13/viper
+github.com/spf13/viper/internal/encoding
+github.com/spf13/viper/internal/encoding/dotenv
+github.com/spf13/viper/internal/encoding/hcl
+github.com/spf13/viper/internal/encoding/ini
+github.com/spf13/viper/internal/encoding/javaproperties
+github.com/spf13/viper/internal/encoding/json
+github.com/spf13/viper/internal/encoding/toml
+github.com/spf13/viper/internal/encoding/yaml
+# github.com/stretchr/testify v1.8.0
+## explicit; go 1.13
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
+# github.com/subosito/gotenv v1.4.1
+## explicit; go 1.18
+github.com/subosito/gotenv
+# golang.org/x/crypto v0.1.0
+## explicit; go 1.17
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/curve25519/internal/field
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/pbkdf2
+golang.org/x/crypto/ripemd160
+# golang.org/x/sync v0.1.0
+## explicit
+golang.org/x/sync/semaphore
+golang.org/x/sync/singleflight
+# golang.org/x/sys v0.1.0
+## explicit; go 1.17
+golang.org/x/sys/execabs
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# golang.org/x/text v0.4.0
+## explicit; go 1.17
+golang.org/x/text/cases
+golang.org/x/text/internal
+golang.org/x/text/internal/language
+golang.org/x/text/internal/language/compact
+golang.org/x/text/internal/tag
+golang.org/x/text/language
+golang.org/x/text/runes
+golang.org/x/text/secure/bidirule
+golang.org/x/text/secure/precis
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+golang.org/x/text/width
+# gopkg.in/ini.v1 v1.67.0
+## explicit
+gopkg.in/ini.v1
+# gopkg.in/yaml.v2 v2.4.0
+## explicit; go 1.15
+gopkg.in/yaml.v2
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3
