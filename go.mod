@@ -3,7 +3,7 @@ module github.com/verder-helpen/auth-digid
 go 1.17
 
 require (
-	github.com/crewjam/saml v0.4.10
+	github.com/crewjam/saml v0.4.11-0.20221211125903-d951aa2d145a
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-co-op/gocron v1.17.1
