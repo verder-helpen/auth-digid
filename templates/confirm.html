@@ -19,9 +19,11 @@
         </dl>
       </section>
       <form method="post">
+        {{ .csrfField }}
         <button type="submit" class="button primary">{{ translate .language "messages.confirm" }}</button>
       </form>
       <form action="{{ .logoutPath }}" method="post">
+        {{ .csrfField }}
         <button type="submit" class="button">{{ translate .language "messages.logout" }}</button>
       </form>
     </main>

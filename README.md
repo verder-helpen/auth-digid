@@ -23,6 +23,13 @@ docker run -e POSTGRES_PASSWORD=password -p 127.0.0.1:5432:5432 --rm postgres
 go test -ldflags "-X github.com/verder-helpen/auth-digid.testdb=postgres://postgres:password@127.0.0.1:5432/postgres"
 ```
 
+## Development
+The file `main_development.go` contains a server setup that doesn't make use of a SAML session. It can be run using:
+```bash
+go run -tags development .
+```
+
+The confirm page is accessible on `http://localhost/confirm/ANYTHING`.
 
 ## Further reading
 Complete documentation for this plugin can be found in [the general Verder Helpen documentation](https://docs.verderhelpen.nl)
