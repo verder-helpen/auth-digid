@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-co-op/gocron"
+	"github.com/gorilla/csrf"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
@@ -112,9 +113,10 @@ func (c *Configuration) getConfirm(w http.ResponseWriter, r *http.Request) {
 
 	// And show the user the confirmation screen
 	c.Template.ExecuteTemplate(w, "confirm", map[string]interface{}{
-		"attributes": translatedAttributes,
-		"language":   lang,
-		"logoutPath": path.Join("/logout", sessionid),
+		"attributes":     translatedAttributes,
+		"language":       lang,
+		"logoutPath":     path.Join("/logout", sessionid),
+		csrf.TemplateTag: csrf.TemplateField(r),
 	})
 }
 
@@ -195,11 +197,17 @@ func (c *Configuration) BuildHandler() http.Handler {
 	// Construct router
 	r := chi.NewRouter()
 
+	// csrfMiddleware
+	csrfMiddleware := csrf.Protect(
+		c.CsrfAuthKey,
+		csrf.Path("/"),
+	)
+
 	r.Route("/", func(r chi.Router) {
 		r.Get("/session/{sessionid}", c.doLogin)
-		r.Get("/confirm/{sessionid}", c.getConfirm)
-		r.Post("/confirm/{sessionid}", c.doConfirm)
-		r.Post("/logout/{sessionid}", c.doLogout)
+		r.With(csrfMiddleware).Get("/confirm/{sessionid}", c.getConfirm)
+		r.With(csrfMiddleware).Post("/confirm/{sessionid}", c.doConfirm)
+		r.With(csrfMiddleware).Post("/logout/{sessionid}", c.doLogout)
 	})
 
 	r.Route("/internal", func(r chi.Router) {

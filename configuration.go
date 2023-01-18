@@ -23,6 +23,9 @@ type Configuration struct {
 	EntityID             string // Not mandatory
 	AuthnContextClassRef string
 
+	// CSRF configuration
+	CsrfAuthKey []byte
+
 	// Keys used to create attribute JWTs
 	JwtSigningKey    *rsa.PrivateKey
 	JwtEncryptionKey *rsa.PublicKey
@@ -97,6 +100,12 @@ func ParseConfiguration() Configuration {
 	authnContextClassRef, ok := digidAuthnContextClasses[digidRequiredAuthLevel]
 	if !ok {
 		log.Fatal("Invalid DigidRequiredAuthLevel")
+	}
+
+	// Load CSRF configuration
+	csrfAuthKey := viper.GetString("CsrfAuthKey")
+	if csrfAuthKey == "" {
+		log.Fatal("Invalid CsrfAuthKey")
 	}
 
 	// Load BRP configuration
@@ -192,6 +201,8 @@ func ParseConfiguration() Configuration {
 		IdpMetadataURL:       idpMetadataURL,
 		EntityID:             entityID,
 		AuthnContextClassRef: authnContextClassRef,
+
+		CsrfAuthKey: []byte(csrfAuthKey),
 
 		JwtSigningKey:    jwtSigningKey,
 		JwtEncryptionKey: jwtEncryptionKey,
