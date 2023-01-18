@@ -1,6 +1,6 @@
 module github.com/verder-helpen/auth-digid
 
-go 1.17
+go 1.19
 
 require (
 	github.com/crewjam/saml v0.4.12
