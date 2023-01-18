@@ -455,8 +455,7 @@ func (t *SentryLogHook) Levels() []log.Level {
 
 func (t *SentryLogHook) Fire(event *log.Entry) error {
 	sentry_event := sentry.Event{
-		Message:  event.Message,
-		Contexts: event.Data,
+		Message: event.Message,
 	}
 	if event.Level == log.ErrorLevel {
 		sentry_event.Level = sentry.LevelError
