@@ -1,7 +1,6 @@
 use std::io::{self, BufRead};
 
-use josekit::jws::RS256;
-use josekit::jwe::RSA_OAEP;
+use josekit::{jwe::RSA_OAEP, jws::RS256};
 
 fn main() {
     let sig_pubkey = "-----BEGIN PUBLIC KEY-----
@@ -47,6 +46,7 @@ Bs6neR/sZuHzNm8y/xtxj2ZAEw==
 
     let jwt = io::stdin().lock().lines().next().unwrap().unwrap();
 
-    let result = verder_helpen_jwt::decrypt_and_verify_auth_result(&jwt, &sig_pubkey, &enc_privkey).unwrap();
+    let result =
+        verder_helpen_jwt::decrypt_and_verify_auth_result(&jwt, &sig_pubkey, &enc_privkey).unwrap();
     println!("{:?}", result);
 }
