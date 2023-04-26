@@ -35,9 +35,10 @@ jobs:
     - uses: actions/checkout@v3
     - name: Install cargo-edit
       run: cargo install cargo-edit
-    - run: cd test-jwt
-    - run: cargo upgrade
-    - run: cargo update
+    - working-directory: test-jwt
+      run: cargo upgrade
+    - working-directory: test-jwt
+      run: cargo update
     - name: Commit files
       run: |
         git config user.name "${{ env.CI_COMMIT_AUTHOR }}"
