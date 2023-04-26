@@ -43,7 +43,7 @@ jobs:
       run: |
         git config user.name "${{ env.CI_COMMIT_AUTHOR }}"
         git config user.email "${{ env.CI_COMMIT_EMAIL }}"
-        git add Cargo.toml Cargo.lock
+        git add test-jwt/Cargo.toml test-jwt/Cargo.lock
         git commit -m "Cargo upgrade"
         git checkout -b cargo-upgrade-`git rev-parse --short HEAD`
         git push --set-upstream origin cargo-upgrade-`git rev-parse --short HEAD`
