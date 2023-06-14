@@ -6,14 +6,14 @@ require (
 	github.com/crewjam/saml v0.4.13
 	github.com/getsentry/sentry-go v0.21.0
 	github.com/go-chi/chi/v5 v5.0.8
-	github.com/go-co-op/gocron v1.28.2
+	github.com/go-co-op/gocron v1.28.3
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gorilla/csrf v1.7.1
 	github.com/jackc/pgx/v4 v4.18.1
-	github.com/lestrrat-go/jwx v1.2.25
+	github.com/lestrrat-go/jwx v1.2.26
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.16.0
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 )
 
 require (
@@ -52,9 +52,9 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/crypto v0.9.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/crypto v0.10.0 // indirect
+	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
