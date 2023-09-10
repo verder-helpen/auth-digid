@@ -18,15 +18,25 @@
           {{ end }}
         </dl>
       </section>
-      <form method="post">
-        {{ .csrfField }}
-        <button type="submit" class="button primary">{{ translate .language "messages.confirm" }}</button>
-      </form>
-      <form action="{{ .logoutPath }}" method="post">
-        {{ .csrfField }}
-        <button type="submit" class="button">{{ translate .language "messages.logout" }}</button>
-      </form>
+      <div class="options">
+        <form method="post">
+          {{ .csrfField }}
+          <button type="submit" class="button primary">
+            <span class="text">{{ translate .language "messages.confirm" }}</span>
+          </button>
+        </form>
+        <form action="{{ .logoutPath }}" method="post">
+          {{ .csrfField }}
+          <button type="submit" class="button">
+            <span class="text">{{ translate .language "messages.logout" }}</span>
+          </button>
+        </form>
+      </div>
     </main>
+    <footer>
+      <span class="text">beveiligd door</span>
+      <span class="logo"></span>
+    </footer>
   </body>
 </html>
 {{ end }}
