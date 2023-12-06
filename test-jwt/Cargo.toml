@@ -8,4 +8,4 @@ edition = "2018"
 
 [dependencies]
 verder-helpen-jwt = { git = "https://github.com/verder-helpen/verder-helpen-jwt.git" }
-josekit = "0.8.3"
+josekit = "0.8.4"
