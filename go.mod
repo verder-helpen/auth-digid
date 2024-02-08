@@ -10,7 +10,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gorilla/csrf v1.7.2
 	github.com/jackc/pgx/v4 v4.18.1
-	github.com/lestrrat-go/jwx v1.2.27
+	github.com/lestrrat-go/jwx v1.2.28
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.18.0
 	github.com/stretchr/testify v1.8.4
