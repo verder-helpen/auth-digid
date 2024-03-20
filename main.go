@@ -73,10 +73,11 @@ func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var attributes map[string]string
 	if c.BRPServer != "" {
-		// Validate requested attributes
+		// Validate requested attributes and create map
 		for _, attribute := range request.Attributes {
-			_, ok := c.AttributeMapping[attribute]
+			attrBrp, ok := c.AttributeMapping[attribute]
 			if !ok {
 				w.WriteHeader(400)
 				log.WithFields(log.Fields{
@@ -84,11 +85,13 @@ func (c *Configuration) startSession(w http.ResponseWriter, r *http.Request) {
 				}).Warn("Requested attribute not in mapping")
 				return
 			}
+
+			attributes[attrBrp] = attribute
 		}
 	}
 
 	// Create a new session in the database
-	encodedAttributes, err := json.Marshal(request.Attributes)
+	encodedAttributes, err := json.Marshal(attributes)
 	if err != nil {
 		w.WriteHeader(500)
 		log.Error(err)
@@ -125,14 +128,6 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var attributes []string
-	err = json.Unmarshal([]byte(session.attributes), &attributes)
-	if err != nil {
-		w.WriteHeader(500)
-		log.Error(err)
-		return
-	}
-
 	authnContextClass := samlsp.AttributeFromContext(r.Context(), "AuthnContextClassRef")
 	if !CompareAuthnContextClass(c.AuthnContextClassRef, authnContextClass) {
 		w.WriteHeader(500)
@@ -151,15 +146,26 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Remove sectoral code
+	bsn = bsn[10:]
+
 	var attributeResult map[string]string
 	if c.BRPServer != "" {
 		// Replace BSN with test BSN in preprod environment
-		altbsn, ok := c.TestBSNMapping[bsn[10:]]
+		altbsn, ok := c.TestBSNMapping[bsn]
 		if ok {
-			bsn = "s00000000:" + altbsn
+			bsn = altbsn
 		}
 
-		attributeResult, err = GetBRPAttributes(c.BRPServer, bsn[10:], c.AttributeMapping, c.Client, c.CaCerts)
+		var attributes map[string]string
+		err = json.Unmarshal([]byte(session.attributes), &attributes)
+		if err != nil {
+			w.WriteHeader(500)
+			log.Error(err)
+			return
+		}
+
+		attributeResult, err = GetBRPAttributes(c.BRPServer, bsn, attributes, c.BRPApiKey)
 		if err != nil {
 			w.WriteHeader(500)
 			log.Error(err)
@@ -167,7 +173,7 @@ func (c *Configuration) doLogin(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		attributeResult = map[string]string{
-			"bsn": bsn[10:],
+			"bsn": bsn,
 		}
 	}
 

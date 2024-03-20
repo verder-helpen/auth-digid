@@ -10,5 +10,16 @@
   "WidgetURL": "https://widget.test.verderhelpen.nl",
   "JWTSigningKey": "signkey.pem",
   "JWTEncryptionKey": "encryptionkey.pem",
-  "DatabaseConnection": "postgres://tg@127.0.0.1:5432/tg"
+  "DatabaseConnection": "postgres://tg@127.0.0.1:5432/tg",
+  "BrpApiKey": "",
+  "BrpServer": "https://www.haalcentraal.nl/haalcentraal/api/brp/personen",
+  "AttributeMapping": {
+    "fullname": "naam.volledigeNaam",
+    "age": "leeftijd",
+    "nationality": "nationaliteiten.nationaliteit.omschrijving",
+    "street": "verblijfplaats.straat",
+    "houseNumber": "verblijfplaats.huisnummer",
+    "zipCode": "verblijfplaats.postcode",
+    "city": "verblijfplaats.woonplaats"
+  }
 }
